@@ -1,0 +1,25 @@
+fastapi
+uvicorn
+smartapi-python
+pyotp
+python-dotenv
+transformers
+torch
+logzero
+websocket-client
+rapidfuzz
+pandas
+redis
+ijson
+google-genai
+
+# Eskapass@123
+
+# imreignsroman98@gmail.com
+# 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
+
+# AIzaSyBo2hVplFeqBWX_92hBTF5TwukVOXcD6oQ -- geminm
+
+# (item.text.contains('EDIS') || item.text.contains('authorised')
+#                 Please setup your TPIN first from your Broker App or else try to sell one share from your 
+
