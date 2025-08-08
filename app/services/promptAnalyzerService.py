@@ -1,4 +1,5 @@
 from Strategy.brokerFactory import BrokerFactory
+from models.schemas import CancelOrderRequest
 from services.geminiService import GeminiService
 from global_constant import constants
 from services.intentDetectionService import IntentDetectionService
@@ -12,18 +13,19 @@ class PromptAnalyzerService():
 
 
     def processUserRequest(self, prompt: str, headers: dict):
-        userIntent =  self.gemini_service.detect_intent(prompt)
-        print("==16====",userIntent)
+        promptResult =  self.gemini_service.detect_intent(prompt)
+        print("==16====",promptResult)
+        return
         data = []
-        # userIntent = self.intent_service.get_intent(prompt) 
-        if userIntent["stock_name"] is not None:
-            data = self.stock_fetching_service.extract_stock_from_prompt(userIntent["stock_name"])
-            data.quantity = userIntent["quantity"]
+        if promptResult["stock_name"] is not None:
+            data = self.stock_fetching_service.extract_stock_from_prompt(promptResult["stock_name"])
+            data.quantity = promptResult["quantity"]
         print("==updated datat  ==",data)
-        performAction = self.performAction(userIntent["intent"], data, headers, prompt)
+        performAction = self.performAction(promptResult, data, headers, prompt)
         return performAction
     
-    def performAction(self, userIntent, data, headers, prompt): 
+    def performAction(self, promptResult, data, headers, prompt): 
+        userIntent = promptResult["intent"]
         brokerName = headers["brokername"]
         brokerFactory = BrokerFactory(brokerName).get_broker()
         response = {}
@@ -60,6 +62,15 @@ class PromptAnalyzerService():
             response_data = brokerFactory.portfolioAnalysis(headers, prompt)
             response = {
                 "userIntent": constants.ANALYZE_PORTFOLIO,
+                "data": response_data
+            }
+        elif userIntent == "cancel_order":
+            obj =  CancelOrderRequest()
+            obj.variety = "NORMAL",
+            obj.orderid = promptResult["orderid"]
+            response_data = brokerFactory.cancelOrder(headers, obj, constants.NUll)
+            response = {
+                "userIntent": constants.CANCELORDER,
                 "data": response_data
             }
         else :

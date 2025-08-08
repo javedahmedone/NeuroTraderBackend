@@ -13,6 +13,9 @@ redis
 ijson
 google-genai
 
+
+# cancel all orders, sell or empty my portfolio -- prompt needs to be handled
+
 # Eskapass@123
 
 # imreignsroman98@gmail.com
