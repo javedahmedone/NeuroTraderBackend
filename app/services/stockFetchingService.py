@@ -3,19 +3,21 @@ import redis
 from rapidfuzz import process
 from typing import Optional
 from models.schemas import StockOrderRequest
+import os
 
 class StockFetchingService:
     def __init__(self):
-        self.redis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        redis_host = os.getenv("REDIS_HOST", "localhost")
+        redis_port = int(os.getenv("REDIS_PORT", "6379"))
+        self.redis = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
 
     def getStockByKey(self, stock_key: str, quantity: int) -> Optional[StockOrderRequest]:
         if not stock_key.lower().startswith("stock:"):
-            key = f"stock:{stock_key.upper()}"
+            key = f"stock:{stock_key.lower()}"
         else:
             key = stock_key
         try:
             data = self.redis.hgetall(key)
-            print("====15===",data)
             if not data:
                 return None
             print("📦 Stock data retrieved:", data)
@@ -30,26 +32,16 @@ class StockFetchingService:
             print("❌ Error getting stock:", e)
             return None
 
-    def extract_stock_from_prompt(self, prompt: str) -> Optional[StockOrderRequest]:
-        # prompt = re.sub(r"([a-zA-Z])(\d)", r"\1 \2", prompt.lower().strip())
-        # prompt = re.sub(r"(\d)([a-zA-Z])", r"\1 \2", prompt)
-
-        # quantity = 1
-        # match = re.search(r"\b(\d+)\b", prompt)
-        # if match:
-        #     quantity = int(match.group(1))
-
-        # # Step 2: Remove common filler words
-        # common_words = {"i", "want", "to", "buy", "sell", "of", "stock", "stocks", "stok","sll"}
-        # words = [w for w in prompt.split() if w not in common_words and not w.isdigit()]
-        # fuzzy_input = " ".join(words).strip()
-
-        # if not fuzzy_input:
-        #     return None  # No stock-related word found
-
+    def extract_stock_from_prompt(self, prompt: str) -> Optional[StockOrderRequest]: 
         # Check if prompt contains exact symbol
-        find_exact_symbol = prompt.upper() + "-EQ"
-        print("exact stokc ==========", find_exact_symbol)
+        find_exact_symbol = prompt.lower()
+        if find_exact_symbol.lower() in self.redis.smembers("stock:symbols"):
+            stock_key = f"stock:{find_exact_symbol}"
+            result = self.getStockByKey(stock_key, -1)
+            print("✅ Exact symbol match:", result)
+            return result
+        
+        find_exact_symbol = prompt.lower() + "-EQ"
         if find_exact_symbol.lower() in self.redis.smembers("stock:symbols"):
             stock_key = f"stock:{find_exact_symbol}"
             result = self.getStockByKey(stock_key, -1)
@@ -74,8 +66,6 @@ class StockFetchingService:
         match_name = process.extractOne(prompt, all_names, score_cutoff=60)
         match_symbol = process.extractOne(prompt, all_symbols, score_cutoff=60)
 
-        print("match_name ======",match_name)
-        print("match_symbol===========",match_symbol)
         stock_key = None
         if match_name and (not match_symbol or match_name[1] >= match_symbol[1]):
             # Fuzzy match on name

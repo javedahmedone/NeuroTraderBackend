@@ -1,7 +1,10 @@
 from fastapi import APIRouter
-from services import stock_store_in_redis
+
+from services.stockIngestionService import StockIngestionService
+
 
 router = APIRouter()
 @router.get("/addStockInRedis")
 def store_in_redis():
-    return stock_store_in_redis.store_stock()
+    service = StockIngestionService()  # ✅ Create instance
+    return service.store_stock()

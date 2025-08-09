@@ -15,7 +15,7 @@ class PromptAnalyzerService():
     def processUserRequest(self, prompt: str, headers: dict):
         promptResult =  self.gemini_service.detect_intent(prompt)
         print("==16====",promptResult)
-        return
+        
         data = []
         if promptResult["stock_name"] is not None:
             data = self.stock_fetching_service.extract_stock_from_prompt(promptResult["stock_name"])

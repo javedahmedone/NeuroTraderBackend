@@ -14,39 +14,46 @@ class AngelOneStrategy(BaseStrategy):
         self.geminiService =  GeminiService()
 
     def place_order(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
-        result  = self.extract_required_headers(headers)
-        if result is False:
-            raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
-        authorization =  headers["authorization"]
-        token = authorization.replace("Bearer ", "")
-        smart_api = SmartConnect(api_key=headers["apikey"])
-        smart_api.setAccessToken(token)
-        smart_api.generateToken(headers["refresh"])
-        print(orderparams)
-        orderparams = {
-            "variety": "NORMAL",
-            "tradingsymbol": orderparams.symbol,
-            "symboltoken": orderparams.token,
-            "transactiontype": transactionType.upper(),
-            "exchange": "NSE",
-            "ordertype": "MARKET",
-            "producttype": "DELIVERY",
-            "duration": "DAY",
-            "price": "0",
-            "squareoff": "0",
-            "stoploss": "0",
-            "quantity": orderparams.quantity
-        }
         try:
+            result  = self.extract_required_headers(headers)
+            if result is False:
+                raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
+            authorization =  headers["authorization"]
+            token = authorization.replace("Bearer ", "")
+            smart_api = SmartConnect(api_key=headers["apikey"])
+            smart_api.setAccessToken(token)
+
+            test = smart_api.generateToken(headers["refresh"])
+            orderparams = {
+                "variety": "NORMAL",
+                "tradingsymbol": orderparams.symbol,
+                "symboltoken": orderparams.token,
+                "transactiontype": transactionType.upper(),
+                "exchange": "NSE",
+                "ordertype": "MARKET",
+                "producttype": "DELIVERY",
+                "duration": "DAY",
+                "price": "0",
+                "squareoff": "0",
+                "stoploss": "0",
+                "quantity": orderparams.quantity
+            }
+
             response = smart_api.placeOrderFullResponse(orderparams)
+            if not response.get("status", False):
+                return {
+                    "success": False,
+                    "message": response.get("message"),
+                    "errorcode": response.get("errorcode"),
+                    "data": response.get("data")
+                }
             response = smart_api.individual_order_details(response["data"]["uniqueorderid"])
-            print("place order===",response)
             return  self.__mapPlaceOrderData(response)
         except Exception as e:
-            print("Exception occurred while placing order:", str(e))
+        # Generic fallback — won't crash if `response` is undefined
             return {
                 "success": False,
-                "message": response['message'] if 'message' in response else "Order placement failed",
+                "message": locals().get("response", {}).get("message", "Unexpected error"),
                 "error": str(e)
             }
     
