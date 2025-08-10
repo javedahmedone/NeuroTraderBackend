@@ -16,13 +16,7 @@ class IntentDetectionService:
 
 
     def get_intent(self, prompt: str) -> str:
-        # intent, score = self.best_fuzzy_intent(prompt)
-        # # Prefer fuzzy if score is moderately good
-        # if score >= 45:
-        #     print(f"✅ Using fuzzy match: {intent} (score: {score})")
-        #     return intent
 
-        # Otherwise, use LLM
         query = (
             f"Classify the user's intent from this prompt: '{prompt}'\n"
             f"Choose from: {', '.join(self.INTENT_KEYWORDS.keys())}.\n"

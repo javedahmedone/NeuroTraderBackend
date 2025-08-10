@@ -1,19 +1,17 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from Middelware.gloabl_exception_middelware import global_exception_middleware
+# from fastapi.middleware.cors import CORSMiddleware
 from routes import auth, portfolio, promtAnalyzer, stock_setup
 
 app = FastAPI()
 
 # Allow frontend CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # for development, restrict in prod
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-# app.middleware("http")(global_exception_middleware)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # for development, restrict in prod
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 print("main py")
