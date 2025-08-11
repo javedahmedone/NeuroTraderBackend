@@ -1,6 +1,6 @@
 from fastapi import HTTPException
-from Strategy.brokerFactory import BrokerFactory
-from models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest
+from app.Strategy.brokerFactory import BrokerFactory
+from app.models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest
 
 class BrokerService:
 

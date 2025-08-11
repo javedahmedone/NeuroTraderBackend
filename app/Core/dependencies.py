@@ -1,10 +1,10 @@
 
 from fastapi import Header
 from fastapi.params import Depends
-from services.geminiService import GeminiService
-from services.intentDetectionService import IntentDetectionService
-from services.promptAnalyzerService import PromptAnalyzerService
-from services.stockFetchingService import StockFetchingService
+from app.services.geminiService import GeminiService
+from app.services.intentDetectionService import IntentDetectionService
+from app.services.promptAnalyzerService import PromptAnalyzerService
+from app.services.stockFetchingService import StockFetchingService
 
 def get_intent_detection_service():
     return IntentDetectionService()

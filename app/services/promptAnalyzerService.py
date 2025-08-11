@@ -1,9 +1,9 @@
-from Strategy.brokerFactory import BrokerFactory
-from models.schemas import CancelOrderRequest
-from services.geminiService import GeminiService
-from global_constant import constants
-from services.intentDetectionService import IntentDetectionService
-from services.stockFetchingService import StockFetchingService
+from app.Strategy.brokerFactory import BrokerFactory
+from app.models.schemas import CancelOrderRequest
+from app.services.geminiService import GeminiService
+from app.global_constant import constants
+from app.services.intentDetectionService import IntentDetectionService
+from app.services.stockFetchingService import StockFetchingService
 
 class PromptAnalyzerService():
     def __init__(self, intent_service: IntentDetectionService, stock_fetching_service: StockFetchingService , gemini_service: GeminiService):

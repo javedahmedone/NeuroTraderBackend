@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth, portfolio, promtAnalyzer, stock_setup
+from app.routes import auth, portfolio, promtAnalyzer, stock_setup
 
 app = FastAPI()
 

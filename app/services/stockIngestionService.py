@@ -14,9 +14,10 @@ class StockIngestionService:
             raise FileNotFoundError(f"CSV file not found at: {self.csv_path}")
 
         # ✅ Redis connection
-        redis_host = os.getenv("REDIS_HOST", "localhost")
-        redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        self.r = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
+        # redis_host = os.getenv("REDIS_HOST", "localhost")
+        # redis_port = int(os.getenv("REDIS_PORT", "6379"))
+        # self.r = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
+        self.r = redis.Redis.from_url("rediss://default:ATl-AAIjcDEwNjM2ZDRiMjBlZmQ0NTAzOTQ2YWFmNTJmNmRkNTk5NnAxMA@prompt-ladybird-14718.upstash.io:6379")
 
         # ✅ Angel One Scrip Master URL
         self.json_url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"

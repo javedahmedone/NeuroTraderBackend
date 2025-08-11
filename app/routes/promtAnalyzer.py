@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from Core.dependencies import get_analyzer_service
-from services.promptAnalyzerService import PromptAnalyzerService
+from app.Core.dependencies import get_analyzer_service
+from app.services.promptAnalyzerService import PromptAnalyzerService
 
 router = APIRouter()
 
