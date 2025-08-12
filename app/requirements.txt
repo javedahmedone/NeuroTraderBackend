@@ -3,12 +3,12 @@ uvicorn
 smartapi-python
 pyotp
 python-dotenv
-transformers
-torch
+# transformers
+# torch
 logzero
 websocket-client
 rapidfuzz
-pandas
+# pandas
 redis
 ijson
 google-genai

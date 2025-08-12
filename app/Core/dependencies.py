@@ -1,5 +1,3 @@
-
-from fastapi import Header
 from fastapi.params import Depends
 from services.geminiService import GeminiService
 from services.intentDetectionService import IntentDetectionService

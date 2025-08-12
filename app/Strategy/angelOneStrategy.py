@@ -13,7 +13,7 @@ class AngelOneStrategy(BaseStrategy):
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
 
-    def place_order(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
+    def placeOrder(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
         try:
             result  = self.extract_required_headers(headers)
             if result is False:
@@ -22,8 +22,7 @@ class AngelOneStrategy(BaseStrategy):
             token = authorization.replace("Bearer ", "")
             smart_api = SmartConnect(api_key=headers["apikey"])
             smart_api.setAccessToken(token)
-
-            test = smart_api.generateToken(headers["refresh"])
+            smart_api.generateToken(headers["refresh"])
             orderparams = {
                 "variety": "NORMAL",
                 "tradingsymbol": orderparams.symbol,
@@ -177,7 +176,7 @@ class AngelOneStrategy(BaseStrategy):
             "status": userOrders["data"]["status"],
             "orderstatus": userOrders["data"]["orderstatus"],
             "text": userOrders["data"]["text"],
-            "uniqueorderid": userOrders["data"]["uniqueorderid"],
+            "orderid": userOrders["data"]["orderid"],
             "transactiontype": userOrders["data"]["transactiontype"]
 
         }

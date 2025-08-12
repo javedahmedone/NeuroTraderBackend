@@ -1,15 +1,14 @@
-import re
 import redis
 from rapidfuzz import process
 from typing import Optional
 from models.schemas import StockOrderRequest
-import os
 
 class StockFetchingService:
     def __init__(self):
-        redis_host = os.getenv("REDIS_HOST", "localhost")
-        redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        self.redis = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
+        # redis_host = os.getenv("REDIS_HOST", "localhost")
+        # redis_port = int(os.getenv("REDIS_PORT", "6379"))
+        # self.redis = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
+        self.redis = redis.Redis.from_url("rediss://default:ATl-AAIjcDEwNjM2ZDRiMjBlZmQ0NTAzOTQ2YWFmNTJmNmRkNTk5NnAxMA@prompt-ladybird-14718.upstash.io:6379")
 
     def getStockByKey(self, stock_key: str, quantity: int) -> Optional[StockOrderRequest]:
         if not stock_key.lower().startswith("stock:"):
@@ -22,27 +21,31 @@ class StockFetchingService:
                 return None
             print("📦 Stock data retrieved:", data)
             return StockOrderRequest(
-                symbol=data.get("symbol"),
-                name=data.get("name"),
-                token=data.get("token"),
-                instrumenttype=data.get("instrumenttype"),
+                symbol= data[b'symbol'].decode('utf-8'),
+                name= data[b'name'].decode('utf-8'),
+                token=data[b'token'].decode('utf-8'),
+                instrumenttype=data[b'instrumenttype'].decode('utf-8'),
                 quantity=quantity
             )
         except Exception as e:
             print("❌ Error getting stock:", e)
-            return None
+            return e
 
     def extract_stock_from_prompt(self, prompt: str) -> Optional[StockOrderRequest]: 
         # Check if prompt contains exact symbol
-        find_exact_symbol = prompt.lower()
-        if find_exact_symbol.lower() in self.redis.smembers("stock:symbols"):
+        find_exact_symbol = prompt.lower().strip()
+        redis_symbols = {
+            symbol.decode("utf-8").strip().lower()
+            for symbol in self.redis.smembers("stock:symbols")
+        }
+        if find_exact_symbol in redis_symbols:
             stock_key = f"stock:{find_exact_symbol}"
             result = self.getStockByKey(stock_key, -1)
             print("✅ Exact symbol match:", result)
             return result
         
-        find_exact_symbol = prompt.lower() + "-EQ"
-        if find_exact_symbol.lower() in self.redis.smembers("stock:symbols"):
+        find_exact_symbol = prompt.lower() + "-eq"
+        if find_exact_symbol.lower().encode("utf-8") in self.redis.smembers("stock:symbols"):
             stock_key = f"stock:{find_exact_symbol}"
             result = self.getStockByKey(stock_key, -1)
             print("✅ Exact symbol match:", result)

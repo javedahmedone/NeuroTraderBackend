@@ -4,14 +4,49 @@ from global_constant import constants
 import re
 
 INTENT_KEYWORDS = {
-        "get_orders": ["my orders", "see orders", "show orders", "order history", "show my orders"],
-        "place_order": ["place order", "buy order", "buy stock", "place new order", "buy shares", "purchase stock", "buy 1 stock", "purchase shares", "buy 1 share", "buy tata consultancy", "i want to buy", "get me stock", "order shares"],
-        "sell_order": ["sell order", "i want to sell", "sell my stock", "sell shares", "sell 1 stock", "sell tata consultancy"],
-        "analyze_portfolio": ["analyze portfolio", "portfolio analysis", "how is my portfolio doing", "suggest me new stocks", "review my portfolio", "analyze and suggest stocks", "portfolio performance", "analyze and recommend"],
-        "view_holdings": ["view holdings", "my holdings", "stocks i own", "show holdings"],
-        "get_total_holdings": ["how many stocks i have", "total stocks i hold", "number of stocks i own", "how many holdings", "count my stocks", "stock count", "total quantity of holdings"],
-        "cancel_order": ["cancel order", "cancel my order", "delete my order", "remove order", "i want to cancel my order", "cancel placed order", "cancel the order", "please cancel my order", "revoke my order", "abort the order", "cancel my order with id", "cancel these orders", "cancel order id", "cancel order number"]
-    }
+    "get_orders": [
+        "my orders", "see orders", "show orders", "order history", "show my orders"
+    ],
+    "place_order": [
+        "place order", "buy order", "buy stock", "place new order", "buy shares",
+        "purchase stock", "buy 1 stock", "purchase shares", "buy 1 share",
+        "buy tata consultancy", "i want to buy", "get me stock", "order shares"
+    ],
+    "sell_order": [
+        "sell order", "i want to sell", "sell my stock", "sell shares",
+        "sell 1 stock"
+    ],
+    "sell_all": [
+        "sell all", "sell all stocks", "sell my entire portfolio",
+        "liquidate all stocks", "sell everything", "empty my portfolio"
+    ],
+    "analyze_portfolio": [
+        "analyze portfolio", "portfolio analysis", "how is my portfolio doing",
+        "suggest me new stocks", "review my portfolio", "analyze and suggest stocks",
+        "portfolio performance", "analyze and recommend"
+    ],
+    "view_holdings": [
+        "view holdings", "my holdings", "stocks i own", "show holdings"
+    ],
+    "get_total_holdings": [
+        "how many stocks i have", "total stocks i hold", "number of stocks i own",
+        "how many holdings", "count my stocks", "stock count", "total quantity of holdings"
+    ],
+    "cancel_order": [
+        "cancel order", "cancel my order", "delete my order", "remove order",
+        "i want to cancel my order", "cancel placed order", "cancel the order",
+        "please cancel my order", "revoke my order", "abort the order",
+        "cancel my order with id", "cancel these orders", "cancel order id",
+        "cancel order number"
+    ],
+    "cancel_all": [
+        "cancel all", "cancel all orders", "delete all orders", "remove all orders",
+        "cancel everything", "cancel all my orders", "abort all orders",
+        "revoke all orders", "clear all orders"
+    ]
+}
+
+
 class GeminiService:
 
     def __init__(self):

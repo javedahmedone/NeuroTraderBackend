@@ -4,7 +4,7 @@ from models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest
 
 class BaseStrategy(ABC):
     @abstractmethod
-    def place_order(self, headers: dict, orderparams : StockOrderRequest, transactionType: str):
+    def placeOrder(self, headers: dict, orderparams : StockOrderRequest, transactionType: str):
         pass
 
     @abstractmethod
