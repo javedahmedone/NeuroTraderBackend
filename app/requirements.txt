@@ -16,11 +16,11 @@ google-genai
 
 # cancel all orders, sell or empty my portfolio -- prompt needs to be handled
 
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 
-docker build -t my-fastapi-app .
-docker run -d -p 5000:5000 my-fastapi-app
+# docker build -t my-fastapi-app .
+# docker run -d -p 5000:5000 my-fastapi-app
 
 
 # docker hub
