@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import auth, portfolio, promtAnalyzer, stock_setup
+from routes import auth, portfolio, promtAnalyzer, stock_setup
 
 app = FastAPI()
 
@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+    
 print("main py")
 app.include_router(auth.router, prefix="/auth")
 app.include_router(portfolio.router, prefix="/portfolio")

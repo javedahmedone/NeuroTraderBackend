@@ -1,5 +1,5 @@
-from app.Strategy.angelOneStrategy import AngelOneStrategy
-from app.Strategy.baseStrategy import BaseStrategy
+from Strategy.angelOneStrategy import AngelOneStrategy
+from Strategy.baseStrategy import BaseStrategy
 
 class BrokerFactory:
     def __init__(self, strategy_type: str):

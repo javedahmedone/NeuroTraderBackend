@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.services.stockIngestionService import StockIngestionService
+from services.stockIngestionService import StockIngestionService
 
 
 router = APIRouter()

@@ -16,6 +16,25 @@ google-genai
 
 # cancel all orders, sell or empty my portfolio -- prompt needs to be handled
 
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
+
+docker build -t my-fastapi-app .
+docker run -d -p 5000:5000 my-fastapi-app
+
+
+# docker hub
+#  - docker login
+# - docker images
+# 	REPOSITORY       TAG       IMAGE ID       CREATED          SIZE
+# 	my-fastapi-app   latest    107ff6c24e99   14 minutes ago   12GB
+
+# - docker tag my-fastapi-app javeddocker98/my-fastapi-app:latest
+# - docker push javeddocker98/my-fastapi-app:latest
+
+# image link  -- docker.io/javeddocker98/my-fastapi-app:latest
+
+
 # Eskapass@123
 
 # imreignsroman98@gmail.com

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.models.schemas import LoginRequest, LoginResponse
-from app.services.brokerService import BrokerService
+from models.schemas import LoginRequest, LoginResponse
+from services.brokerService import BrokerService
 
 router = APIRouter()
 

@@ -22,4 +22,4 @@ ENV PYTHONPATH=/code
 EXPOSE 5000
 
 # Start FastAPI
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]

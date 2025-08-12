@@ -1,9 +1,9 @@
-from app.Strategy.brokerFactory import BrokerFactory
-from app.models.schemas import CancelOrderRequest
-from app.services.geminiService import GeminiService
-from app.global_constant import constants
-from app.services.intentDetectionService import IntentDetectionService
-from app.services.stockFetchingService import StockFetchingService
+from Strategy.brokerFactory import BrokerFactory
+from models.schemas import CancelOrderRequest
+from services.geminiService import GeminiService
+from global_constant import constants
+from services.intentDetectionService import IntentDetectionService
+from services.stockFetchingService import StockFetchingService
 
 class PromptAnalyzerService():
     def __init__(self, intent_service: IntentDetectionService, stock_fetching_service: StockFetchingService , gemini_service: GeminiService):
@@ -31,7 +31,7 @@ class PromptAnalyzerService():
         if userIntent == "place_order": 
             response_data = self.__validateStockQuantity(data)
             if response_data["success"] is True:
-                response_data = brokerFactory.place_order(headers, data, constants.BUY)
+                response_data = brokerFactory.placeOrder(headers, data, constants.BUY)
             response = {
                 "userIntent": constants.BUYORDER,
                 "data": response_data,
