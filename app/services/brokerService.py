@@ -18,7 +18,7 @@ class BrokerService:
         
     def place_order(self, headers: dict, orderParams: StockOrderRequest, transactionType: str):
         try:
-            return self.brokerFactory.place_order(headers,orderParams,transactionType)
+            return self.brokerFactory.placeOrder(headers,orderParams,transactionType)
         except Exception as e:
             raise HTTPException(status_code=500, detail="Login failed: " + str(e))
 

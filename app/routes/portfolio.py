@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from models.schemas import CancelOrderRequest
+from models.schemas import CancelOrderRequest, StockOrderRequest
 from global_constant import constants
 from services.brokerService import BrokerService
 
@@ -61,5 +61,21 @@ def fetch_orders(
         raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
     service = BrokerService(headers["brokername"])
     data =  service.cancelOrder(headers, cancelRequest, constants.NUll)
+    return data
+
+
+@router.post("/placeOrder")
+def fetch_orders(
+    request: Request,
+    orderRequest: StockOrderRequest
+):
+
+    headers = dict(request.headers)
+    required = ["brokername"]
+    missing = [key for key in required if key not in headers]
+    if missing:
+        raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
+    service = BrokerService(headers["brokername"])
+    data =  service.place_order(headers, orderRequest, orderRequest.transactionType  )
     return data
 

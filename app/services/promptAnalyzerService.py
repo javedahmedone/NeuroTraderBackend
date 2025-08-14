@@ -99,11 +99,17 @@ class PromptAnalyzerService():
         return response
 
     def __validateStockQuantity(self,data):
+        if not hasattr(data, "symbol") or not hasattr(data, "quantity"):
+            return {
+                "success": False,
+                "message": "Invalid request format",
+                "error": "CODE01"
+            }
         if not data :
             response = {"success":False,"message":"Please enter valid prompt", "error":"CODE01"}
         elif data.quantity is None or data.quantity == 0  :  
             response = {"success":False,"message":"Please enter valid stock quantity", "error":"CODE01"}
-        elif data.symbol is None or data.symbol == 0  :  
+        elif not data.symbol:  #or  data.symbol is None or data.symbol == 0  :  
             response = {"success":False,"message":"Please enter valid stock name", "error":"CODE01"}
         
         else:

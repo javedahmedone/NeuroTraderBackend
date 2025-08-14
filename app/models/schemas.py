@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
     clientcode: str
@@ -17,11 +18,12 @@ class LoginResponse(BaseModel):
     feedToken: str
 
 class StockOrderRequest(BaseModel):
-    symbol: str              # e.g. "TCS-EQ"
-    name: str                # e.g. "tcs"
-    token: str               # e.g. "11536"
-    instrumenttype: str      # e.g. "EQ"
-    quantity: int     
+    symbol: str = Field(..., min_length=1)
+    quantity: int 
+    token: int
+    transactionType: str
+    name: str | None = None
+    instrumenttype: str | None = None   
 
 class CancelOrderRequest(BaseModel):
     variety :str

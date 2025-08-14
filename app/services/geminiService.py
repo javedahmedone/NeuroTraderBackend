@@ -5,7 +5,7 @@ import re
 
 INTENT_KEYWORDS = {
     "get_orders": [
-        "my orders", "see orders", "show orders", "order history", "show my orders"
+        "my orders", "see orders", "show orders", "order history", "show my orders","order"
     ],
     "place_order": [
         "place order", "buy order", "buy stock", "place new order", "buy shares",
