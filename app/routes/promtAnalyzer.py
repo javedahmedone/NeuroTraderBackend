@@ -15,7 +15,7 @@ def get_user_intent(
     required = ["brokername"]
     missing = [key for key in required if key not in headers]
     if missing:
-        raise HTTPException(status_code=400, detail=f"Missing required headers brokerName: {', '.join(missing)}")
+        raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
 
     generator = prompt_service.processUserRequest(prompt, headers)
     return generator

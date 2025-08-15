@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from models.schemas import CancelOrderRequest, StockOrderRequest
 from global_constant import constants
 from services.brokerService import BrokerService
@@ -14,7 +14,8 @@ def fetch_holdings(
     required = ["brokername"]
     missing = [key for key in required if key not in headers]
     if missing or headers["brokername"] == '' :
-        raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")
+        raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
+        # raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")
         
     service = BrokerService(headers["brokername"])
     return service.getHoldings(headers,constants.NUll)
@@ -29,7 +30,7 @@ def fetch_holdings(
     required = ["brokername"]
     missing = [key for key in required if key not in headers]
     if missing:
-        raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
+        raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
     service = BrokerService(headers["brokername"])
     return service.get_profile(headers)
 
@@ -58,7 +59,8 @@ def fetch_orders(
     required = ["brokername"]
     missing = [key for key in required if key not in headers]
     if missing:
-        raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
+        raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
+
     service = BrokerService(headers["brokername"])
     data =  service.cancelOrder(headers, cancelRequest, constants.NUll)
     return data
@@ -74,7 +76,7 @@ def fetch_orders(
     required = ["brokername"]
     missing = [key for key in required if key not in headers]
     if missing:
-        raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
+        return ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
     service = BrokerService(headers["brokername"])
     data =  service.place_order(headers, orderRequest, orderRequest.transactionType  )
     return data
