@@ -4,20 +4,19 @@ import redis
 import csv
 import os
 
+from config import REDIS_URL
+
 
 class StockIngestionService:   
     def __init__(self):
-        base_path = os.getcwd()  # C:\project1\NeuroTraderBackend
+        base_path = os.getcwd()  
         self.csv_path = os.path.join(base_path,  "Files", "EQUITY_L.csv")
         # ✅ Ensure CSV exists
         if not os.path.exists(self.csv_path):
             raise FileNotFoundError(f"CSV file not found at: {self.csv_path}")
 
         # ✅ Redis connection
-        # redis_host = os.getenv("REDIS_HOST", "localhost")
-        # redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        # self.r = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
-        self.r = redis.Redis.from_url("rediss://default:ATl-AAIjcDEwNjM2ZDRiMjBlZmQ0NTAzOTQ2YWFmNTJmNmRkNTk5NnAxMA@prompt-ladybird-14718.upstash.io:6379")
+        self.r = redis.Redis.from_url(REDIS_URL)
 
         # ✅ Angel One Scrip Master URL
         self.json_url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"

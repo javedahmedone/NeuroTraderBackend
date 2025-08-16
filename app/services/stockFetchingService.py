@@ -1,19 +1,13 @@
 import redis
 from rapidfuzz import process
 from typing import Optional
+from config import REDIS_URL
 from models.schemas import StockOrderRequest
 
 class StockFetchingService:
     def __init__(self):
-        # redis_host = os.getenv("REDIS_HOST", "localhost")
-        # redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        # self.redis = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
-        self.redis = redis.Redis.from_url("rediss://default:ATl-AAIjcDEwNjM2ZDRiMjBlZmQ0NTAzOTQ2YWFmNTJmNmRkNTk5NnAxMA@prompt-ladybird-14718.upstash.io:6379")
-        # redis_host = os.getenv("REDIS_HOST", "localhost")
-        # redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        # self.redis = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
-        # self.redis = redis.Redis.from_url("rediss://default:ATl-AAIjcDEwNjM2ZDRiMjBlZmQ0NTAzOTQ2YWFmNTJmNmRkNTk5NnAxMA@prompt-ladybird-14718.upstash.io:6379")
-
+             self.redis = redis.Redis.from_url(REDIS_URL)
+       
     def getStockByKey(self, stock_key: str, quantity: int): #-> Optional[StockOrderRequest]:
         if not stock_key.lower().startswith("stock:"):
             key = f"stock:{stock_key.lower()}"

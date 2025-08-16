@@ -19,8 +19,8 @@ google-genai
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 
-# docker build -t my-fastapi-app .
-# docker run -d -p 5000:5000 my-fastapi-app
+# docker build -t lite-fastapi-app .
+# docker run -d -p 5000:5000 lite-fastapi-app
 
 
 # docker hub
@@ -29,19 +29,11 @@ google-genai
 # 	REPOSITORY       TAG       IMAGE ID       CREATED          SIZE
 # 	my-fastapi-app   latest    107ff6c24e99   14 minutes ago   12GB
 
-# - docker tag my-fastapi-app javeddocker98/my-fastapi-app:latest
-# - docker push javeddocker98/my-fastapi-app:latest
+# - docker tag lite-fastapi-app javeddocker98/lite-fastapi-app:latest
+# - docker push javeddocker98/lite-fastapi-app:latest
 
 # image link  -- docker.io/javeddocker98/my-fastapi-app:latest
 
 
-# Eskapass@123
-
-# imreignsroman98@gmail.com
-# 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
 
 # AIzaSyBo2hVplFeqBWX_92hBTF5TwukVOXcD6oQ -- geminm
-
-# (item.text.contains('EDIS') || item.text.contains('authorised')
-#                 Please setup your TPIN first from your Broker App or else try to sell one share from your 
-
