@@ -4,7 +4,7 @@ import pyotp
 from Strategy.baseStrategy import BaseStrategy
 from services.geminiService import GeminiService
 from global_constant import constants
-from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, StockOrderRequest
+from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, StockOrderRequest, UserPromptRequest
 from services.stockFetchingService import StockFetchingService
 
 
@@ -50,11 +50,18 @@ class AngelOneStrategy(BaseStrategy):
             return  self.__mapPlaceOrderData(response)
         except Exception as e:
         # Generic fallback — won't crash if `response` is undefined
-            return {
+            if "NoneType" in  str(e):
+                return {
                 "success": False,
-                "message": locals().get("response", {}).get("message", "Unexpected error"),
+                "message": "Invalid Token",
                 "error": str(e)
-            }
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": locals().get("response", {}).get("message", "Unexpected error"),
+                    "error": str(e)
+                }
     
     def getOrders(self, headers: dict, navigateFrom: str):
         authorization =  headers["authorization"]
@@ -131,7 +138,7 @@ class AngelOneStrategy(BaseStrategy):
         data = self.geminiService.processUserRequest(userHoldings, userPrompt)
         return data
     
-    def cancelOrder(self, headers:dict, cancelRequest: CancelOrderRequest, userPrompt: str):
+    def cancelOrder(self, headers:dict, data: UserPromptRequest, userPrompt: str):
         result  = self.extract_required_headers(headers)
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
@@ -140,6 +147,17 @@ class AngelOneStrategy(BaseStrategy):
         token = authorization.replace("Bearer ", "")
         smart_api = SmartConnect(api_key=headers["apikey"])
         smart_api.setAccessToken(token)
+        if userPrompt == constants.NUll :
+            print("===cancelOrder===",  data.orderIds[0])
+            cancelRequest = CancelOrderRequest (
+                variety="NORMAL",
+                orderid= data.orderIds[0]
+            )
+        else:
+            cancelRequest= CancelOrderRequest (
+                variety="NORMAL",
+                orderid= data.orderid
+            )
         try:
             result = smart_api.cancelOrder(cancelRequest.orderid, cancelRequest.variety)  
             print(result)
@@ -148,6 +166,19 @@ class AngelOneStrategy(BaseStrategy):
             raise HTTPException(status_code=500, detail="Unexpected error in AngelOne strategy: " + str(e))
 
 
+    def cancelAllOrders(self, headers:dict):
+        orders_data = self.getOrders(headers,constants.NUll)
+        for order in orders_data:
+            orderStatus = order.get("status")
+            if orderStatus and orderStatus.lower() == "open":
+                obj = CancelOrderRequest(
+                    variety="NORMAL",
+                    orderid=order.get("orderid")
+                )
+                self.cancelOrder(headers, obj, None)
+        return self.getOrders(headers,constants.NUll)
+ 
+            
     def __mapHoldingsData(self, holdingsData):
         holdings = []
         userHoldings = holdingsData["data"]["holdings"]

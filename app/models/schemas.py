@@ -18,7 +18,7 @@ class LoginResponse(BaseModel):
     feedToken: str
 
 class StockOrderRequest(BaseModel):
-    symbol: str = Field(..., min_length=1)
+    symbol: str 
     quantity: int 
     token: int
     transactionType: str
@@ -28,6 +28,14 @@ class StockOrderRequest(BaseModel):
 class CancelOrderRequest(BaseModel):
     variety :str
     orderid :str
+
+class UserPromptRequest(BaseModel):
+    userIntent : str
+    quantity : int
+    orderIds : list[str]
+    stock_name : list[str] = Field(default_factory=list)
+    token: int
+    symbol: str | None = None
 
 
 

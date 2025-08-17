@@ -54,23 +54,55 @@ class StockIngestionService:
                 }
 
 
+
     def store_to_redis(self):
-            """Store streamed stocks in Redis."""
-            print("🚀 Storing NSE equity stocks in Redis...")
+        count = 0
+        pipe = self.r.pipeline(transaction=False)
 
-            # Clear old data
-            self.r.delete("stock:names")
-            self.r.delete("stock:symbols")
+        for stock in self.stream_nse_equities():
+            redis_key = f"stock:{stock['symbol'].lower()}"
+            stock_name_key = f"stock:{stock['name'].lower()}"
+            stock_symbol = stock["symbol"].lower()
 
-            count = 0
-            for stock in self.stream_nse_equities():
-                redis_key = f"stock:{stock['symbol'].lower()}"
-                self.r.hset(redis_key, mapping=stock)
-                self.r.sadd("stock:names", stock["name"].lower())
-                self.r.sadd("stock:symbols", stock["symbol"].lower())
-                count += 1
+            # Store symbol as the value
+            pipe.set(stock_name_key, stock_symbol)
+            # Store full stock as hash
+            pipe.hset(redis_key, mapping=stock)
+            # Maintain sets and mapping
+            pipe.sadd("stock:symbols", stock_symbol)
+            pipe.sadd("stock:names", stock["name"].lower())
 
-            print(f"✅ Loaded {count} NSE equity stocks into Redis.")
+            count += 1
+
+            # Execute in batches of 200 (avoid timeouts on Upstash)
+            if count % 200 == 0:
+                pipe.execute()
+
+        # Final execute for remaining stocks
+        pipe.execute()
+
+        print(f"✅ Loaded {count} NSE equity stocks into Redis.")
+
+    # def store_to_redis1(self):
+    #         """Store streamed stocks in Redis."""
+    #         print("🚀 Storing NSE equity stocks in Redis...")
+
+    #         # Clear old data
+    #         self.r.delete("stock:names")
+    #         self.r.delete("stock:symbols")
+
+    #         count = 0
+    #         for stock in self.stream_nse_equities():
+    #             redis_key = f"stock:{stock['symbol'].lower()}"
+    #             self.r.hset(redis_key, mapping=stock)
+    #             self.r.hset("stock:name_to_symbol", stock["name"].lower(), stock["symbol"].lower())
+
+    #             # self.r.sadd("stock:names", stock["name"].lower())
+    #             # self.r.sadd("stock:symbols", stock["symbol"].lower())
+
+    #             count += 1
+
+    #         print(f"✅ Loaded {count} NSE equity stocks into Redis.")
 
     def store_stock(self):
         """Shortcut method to store all stocks."""

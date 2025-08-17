@@ -1,93 +1,109 @@
 import redis
 from rapidfuzz import process
-from typing import Optional
+from typing import Optional, List
 from config import REDIS_URL
 from models.schemas import StockOrderRequest
 
+
 class StockFetchingService:
     def __init__(self):
-             self.redis = redis.Redis.from_url(REDIS_URL)
-       
-    def getStockByKey(self, stock_key: str, quantity: int): #-> Optional[StockOrderRequest]:
+        self.redis = redis.Redis.from_url(REDIS_URL)
+
+    # ✅ Save stock into Redis
+    # def save_stock(self, stock_key: str, stock_data: dict):
+    #     """
+    #     Stores stock data as a hash in Redis and maintains helper sets/maps
+    #     stock_key example: "stock:tcs-eq"
+    #     stock_data example:
+    #     {
+    #         "symbol": "TCS-EQ",
+    #         "token": "11536",
+    #         "instrumenttype": "EQ",
+    #         "name": "tata consultancy services limited"
+    #     }
+    #     """
+    #     # Store full stock as hash
+    #     self.redis.hset(stock_key, mapping=stock_data)
+
+    #     # Maintain sets for search
+    #     self.redis.sadd("stock:symbols", stock_data["symbol"].lower())
+    #     self.redis.sadd("stock:names", stock_data["name"].lower())
+
+    #     # Maintain direct mapping: name → symbol
+    #     self.redis.hset("stock:name_to_symbol", stock_data["name"].lower(), stock_data["symbol"].lower())
+
+    # ✅ Fetch a stock by Redis key
+    def getStockByKey(self, stock_key: str, quantity: int) -> Optional[StockOrderRequest]:
         if not stock_key.lower().startswith("stock:"):
             key = f"stock:{stock_key.lower()}"
         else:
             key = stock_key
+
         try:
             data = self.redis.hgetall(key)
             if not data:
                 return None
+
             return StockOrderRequest(
-                symbol= data[b'symbol'].decode('utf-8'),
-                name= data[b'name'].decode('utf-8'),
+                symbol=data[b'symbol'].decode('utf-8'),
+                name=data[b'name'].decode('utf-8'),
                 token=data[b'token'].decode('utf-8'),
                 instrumenttype=data[b'instrumenttype'].decode('utf-8'),
                 quantity=quantity,
-                transactionType= ""
+                transactionType=""
             )
-            print(obj)
         except Exception as e:
             print("❌ Error getting stock:", e)
-            return e
+            return None
 
-    def extract_stock_from_prompt(self, prompt: str) -> Optional[StockOrderRequest]: 
-        # Check if prompt contains exact symbol
-        find_exact_symbol = prompt.lower().strip()
+    # ✅ Extract stock by prompt (fast fuzzy search)
+    def extract_stock_from_prompt(self, stockData: List[str]) -> Optional[StockOrderRequest]:
         redis_symbols = {
             symbol.decode("utf-8").strip().lower()
             for symbol in self.redis.smembers("stock:symbols")
         }
-        if find_exact_symbol in redis_symbols:
-            stock_key = f"stock:{find_exact_symbol}"
-            result = self.getStockByKey(stock_key, -1)
-            print("✅ Exact symbol match:", result)
-            return result
-        
-        find_exact_symbol = prompt.lower() + "-eq"
-        if find_exact_symbol in redis_symbols:
-            stock_key = f"stock:{find_exact_symbol}"
-            result = self.getStockByKey(stock_key, -1)
-            print("✅ Exact symbol match:", result)
-            return result
+        redis_names = {
+            name.decode("utf-8").strip().lower()
+            for name in self.redis.smembers("stock:names")
+        }
 
-        # Try exact name match
-        for key in self.redis.scan_iter("stock:*"):
-            if key in ["stock:names", "stock:symbols"]:
-                continue
-            try:
-                name = self.redis.hget(key, "name")
-                if name and name.lower() == prompt:
-                    return self.getStockByKey(key, -1)
-            except Exception:
-                continue
+        for prompt in stockData:
+            query = prompt.lower().strip()
+            # --- 1. Exact match on symbol
+            if query in redis_symbols:
+                stock_key = f"stock:{query}"
+                result = self.getStockByKey(stock_key, -1)
+                print("✅ Exact symbol match:", result)
+                return result
+            
+            key = query + '-eq'
+            if key in redis_symbols:
+                stock_key = f"stock:{key}"
+                result = self.getStockByKey(stock_key, -1)
+                print("✅ Exact symbol match:", result)
+                return result
 
-        # Fuzzy match
-        all_names = list(self.redis.smembers("stock:names"))
-        all_symbols = list(self.redis.smembers("stock:symbols"))
+          
+            # --- 3. Fuzzy match
+            match_name = process.extractOne(query, redis_names, score_cutoff=70)
+            match_symbol = process.extractOne(query, redis_symbols, score_cutoff=70)
 
-        match_name = process.extractOne(prompt, all_names, score_cutoff=60)
-        match_symbol = process.extractOne(prompt, all_symbols, score_cutoff=60)
+            if match_name and (not match_symbol or match_name[1] >= match_symbol[1]):
+                matched_name = match_name[0]
+                name = "stock:"+matched_name
+                symbol = self.redis.get(name)
+                if symbol:
+                    stock_key = f"stock:{symbol.decode('utf-8')}"
+                    result = self.getStockByKey(stock_key, -1)
+                    print("✅ Fuzzy name match:", result)
+                    return result
 
-        stock_key = None
-        if match_name and (not match_symbol or match_name[1] >= match_symbol[1]):
-            # Fuzzy match on name
-            matched_name = match_name[0]
-            for key in self.redis.scan_iter("stock:*"):
-                if key in ["stock:names", "stock:symbols"]:
-                    continue
-                try:
-                    if self.redis.hget(key, "name") == matched_name:
-                        stock_key = key
-                        break
-                except:
-                    continue
-        elif match_symbol:
-            # Fuzzy match on symbol
-            matched_symbol = match_symbol[0].upper()
-            stock_key = f"stock:{matched_symbol}"
+            elif match_symbol:
+                matched_symbol = match_symbol[0].lower()
+                stock_key = f"stock:{matched_symbol}"
+                result = self.getStockByKey(stock_key, -1)
+                print("✅ Fuzzy symbol match:", result)
+                return result
 
-        if stock_key:
-            return self.getStockByKey(stock_key, -1)
-
-        print("⚠️ No stock match found.")
+        print("⚠️ No stock match found for any prompt.")
         return None

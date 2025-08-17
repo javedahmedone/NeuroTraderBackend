@@ -11,12 +11,9 @@ def fetch_holdings(
     request: Request
 ):
     headers = dict(request.headers)
-    required = ["brokername"]
-    missing = [key for key in required if key not in headers]
-    if missing or headers["brokername"] == '' :
+    if headers.get("brokername") is None or headers.get("brokername") == '':
         raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
-        # raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")
-        
+   
     service = BrokerService(headers["brokername"])
     return service.getHoldings(headers,constants.NUll)
 
@@ -27,10 +24,9 @@ def fetch_holdings(
     request: Request
 ):
     headers = dict(request.headers)
-    required = ["brokername"]
-    missing = [key for key in required if key not in headers]
-    if missing:
+    if headers.get("brokername") is None or headers.get("brokername") == '':
         raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
+
     service = BrokerService(headers["brokername"])
     return service.get_profile(headers)
 
@@ -40,10 +36,8 @@ def fetch_orders(
        request: Request
     ):
     headers = dict(request.headers)
-    required = ["brokername"]
-    missing = [key for key in required if key not in headers]
-    if missing:
-        raise ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
+    if headers.get("brokername") is None or headers.get("brokername") == '':
+        raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
     service = BrokerService(headers["brokername"])
     data =  service.getOrders(headers,constants.NUll)
     return data
@@ -54,15 +48,12 @@ def fetch_orders(
     request: Request,
     cancelRequest: CancelOrderRequest
 ):
-
     headers = dict(request.headers)
-    required = ["brokername"]
-    missing = [key for key in required if key not in headers]
-    if missing:
+    if headers.get("brokername") is None or headers.get("brokername") == '':
         raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
 
     service = BrokerService(headers["brokername"])
-    data =  service.cancelOrder(headers, cancelRequest, constants.NUll)
+    data =  service.cancelOrder(headers, cancelRequest, constants.CANCELORDER)
     return data
 
 
@@ -73,10 +64,8 @@ def fetch_orders(
 ):
 
     headers = dict(request.headers)
-    required = ["brokername"]
-    missing = [key for key in required if key not in headers]
-    if missing:
-        return ValueError(f"Missing required headers brokerName: {', '.join(missing)}")  
+    if headers.get("brokername") is None or headers.get("brokername") == '':
+        raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
     service = BrokerService(headers["brokername"])
     data =  service.place_order(headers, orderRequest, orderRequest.transactionType  )
     return data

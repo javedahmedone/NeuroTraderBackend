@@ -1,5 +1,5 @@
 from Strategy.brokerFactory import BrokerFactory
-from models.schemas import CancelOrderRequest
+from models.schemas import CancelOrderRequest, UserPromptRequest
 from services.geminiService import GeminiService
 from global_constant import constants
 from services.intentDetectionService import IntentDetectionService
@@ -14,16 +14,29 @@ class PromptAnalyzerService():
 
 
     def processUserRequest(self, prompt: str, headers: dict):
-        promptResult =  self.gemini_service.detect_intent(prompt)        
-        data = []
-        if promptResult["stock_name"] is not None:
-            data = self.stock_fetching_service.extract_stock_from_prompt(promptResult["stock_name"])
-            data.quantity = promptResult["quantity"]
+        promptResult =  self.gemini_service.detect_intent(prompt)  
+        promptObject = UserPromptRequest(
+            userIntent= promptResult.get("intent"),
+            quantity=0,
+            stock_name=[],
+            orderIds = promptResult.get("orderids", []),
+            symbol=None,
+            token=0
+        )     
+        data = promptResult
+        if promptResult["stock_name"] is not None and  len(promptResult["stock_name"]) == 1:
+            stockData = self.stock_fetching_service.extract_stock_from_prompt(promptResult["stock_name"])
+            promptObject.stock_name = stockData.name
+            promptObject.quantity = promptResult["quantity"]  # if it's a model, use dot notation
+            promptObject.symbol = stockData.symbol
+            promptObject.token = stockData.token   
+
+            # data.quantity = promptResult["quantity"]
         print("==updated datat  ==",data)
-        performAction = self.performAction(promptResult, data, headers, prompt)
+        performAction = self.performAction(promptResult, promptObject, headers, prompt)
         return performAction
     
-    def performAction(self, promptResult, data, headers, prompt): 
+    def performAction(self, promptResult, data:UserPromptRequest, headers, prompt): 
         userIntent = promptResult["intent"]
         brokerName = headers["brokername"]
         brokerFactory = BrokerFactory(brokerName).get_broker()
@@ -60,7 +73,6 @@ class PromptAnalyzerService():
             }
 
         elif userIntent == "get_orders":
-            # response_data = brokerFactory.getOrders(headers,"")
             response_data = self.___getOrders(brokerFactory, headers)
             response = {
                 "userIntent": constants.GETORDERS,
@@ -69,7 +81,6 @@ class PromptAnalyzerService():
 
         elif userIntent == "view_holdings" or userIntent == "get_total_holdings":
             response_data = self.__getHoldings(brokerFactory,headers)   
-            # brokerFactory.getHoldings(headers, constants.USERPROMPT)
             response = {
                 "userIntent": constants.HOLDINGS,
                 "data": response_data
@@ -82,14 +93,19 @@ class PromptAnalyzerService():
                 "data": response_data
             }
         elif userIntent == "cancel_order":
-            obj =  CancelOrderRequest()
-            obj.variety = "NORMAL",
-            obj.orderid = promptResult["orderid"]
-            response_data = brokerFactory.cancelOrder(headers, obj, constants.NUll)
+            response_data = brokerFactory.cancelOrder(headers, data, constants.NUll)
             response = {
                 "userIntent": constants.CANCELORDER,
                 "data": response_data
             }
+        
+        elif userIntent == "cancel_all":
+            response_data = brokerFactory.cancelAllOrders(headers)  # ✅ fixed          
+            response = {
+                "userIntent": constants.CANCELALLORDERS,
+                "data": response_data
+            }
+
         else :
             response = {
                 "userIntent": constants.UNKNOWN,
@@ -99,19 +115,16 @@ class PromptAnalyzerService():
         return response
 
     def __validateStockQuantity(self,data):
-        if not hasattr(data, "symbol") or not hasattr(data, "quantity"):
-            return {
-                "success": False,
-                "message": "Invalid request format",
-                "error": "CODE01"
-            }
-        if not data :
-            response = {"success":False,"message":"Please enter valid prompt", "error":"CODE01"}
+        if not data:
+            return {"success": False, "message": "Invalid request format, Please give proper stock name and quantity ","error": "CODE01" }
+        if len(data.symbol) == 0  or not data.symbol:
+            return {"success": False, "message": "Invalid request format, Please give proper stock name","error": "CODE01" }
         elif data.quantity is None or data.quantity == 0  :  
             response = {"success":False,"message":"Please enter valid stock quantity", "error":"CODE01"}
-        elif not data.symbol:  #or  data.symbol is None or data.symbol == 0  :  
-            response = {"success":False,"message":"Please enter valid stock name", "error":"CODE01"}
-        
+        # elif not data.symbol:  #or  data.symbol is None or data.symbol == 0  :  
+        #     response = {"success":False,"message":"Please enter valid stock name", "error":"CODE01"}
+        # elif data.quantity != data.symbol:
+        #     response = {"success":False,"message":"Please check prompt and give proper quantity of each stock", "error":"CODE01"}
         else:
             response = {"success":True}
         return response 

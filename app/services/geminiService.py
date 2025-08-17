@@ -74,17 +74,17 @@ class GeminiService:
             {categories}
             ### Task:
             1. From the user input below, identify the **intent**. Only use keys: {", ".join(INTENT_KEYWORDS.keys())}. If nothing matches, reply "unknown".
-            2. Extract the **stock name** (if mentioned).
+            2. Extract the **stock name** (if mentioned, as an array ).
             3. Extract the **quantity** (if mentioned, as a number, else null).
-            4. Extract all **order IDs** mentioned (as an array of numbers, else empty array).
+            4. Extract all **order IDs** mentioned (as an array of numbers or string, else empty array).
 
 
             ### Format your response as JSON give me clean json no extra quotes:
             {{
             "intent": "one_of_the_keys_or_unknown",
-            "stock_name": "stock name or null",
+            "stock_name": [list of stock name or empty array]  
             "quantity": number or null,
-            "orderids": [list of numbers or empty array]
+            "orderids": [list of numbers or stirng  or empty array]
 
             }}
             ### User input:
@@ -104,11 +104,14 @@ class GeminiService:
             intent = data.get("intent", "unknown").strip().lower()
             if intent not in INTENT_KEYWORDS and intent != "unknown":
                 intent = "unknown"
+            raw_orderids = data.get("orderids", [])
+            orderids = [oid.lstrip("-").strip() for oid in raw_orderids if isinstance(oid, str)]
+
             return {
                 "intent": intent,
-                "stock_name": data.get("stock_name"),
-                "quantity": data.get("quantity"),
-                "orderids": data.get("orderids", [])
+                "stock_name": data.get("stock_name",[]),
+                "quantity": data.get("quantity",[]),
+                "orderids": orderids
             }
         except Exception as e:
             print("❌ Failed to parse Gemini response:", response.text)

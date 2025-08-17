@@ -12,9 +12,7 @@ def get_user_intent(
 ):
     print("===controller==")
     headers = dict(request.headers)
-    required = ["brokername"]
-    missing = [key for key in required if key not in headers]
-    if missing:
+    if headers.get("brokername") is None or headers.get("brokername") == '':
         raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
 
     generator = prompt_service.processUserRequest(prompt, headers)

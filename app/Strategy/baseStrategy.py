@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from fastapi import Request
-from models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest
+from models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest, UserPromptRequest
 
 class BaseStrategy(ABC):
     @abstractmethod
@@ -11,7 +11,12 @@ class BaseStrategy(ABC):
     def getOrders(self, headers: dict, navigateFrom: str):
         pass
 
-    def cancelOrder(self, headers: dict, cancelRequest: CancelOrderRequest, navigateFrom: str):
+    @abstractmethod
+    def cancelOrder(self, headers: dict, data: UserPromptRequest, navigateFrom: str):
+        pass
+
+    @abstractmethod
+    def cancelAllOrders(self, headers: dict):
         pass
 
     @abstractmethod
