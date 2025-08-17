@@ -14,8 +14,6 @@ ijson
 google-genai
 
 
-# cancel all orders, sell or empty my portfolio -- prompt needs to be handled
-
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 
