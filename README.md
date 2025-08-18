@@ -25,10 +25,10 @@ The backend leverages:
 ## 🛠️ Tech Stack  
 
 - **Language**: Python 3.10+  
-- **Framework**: FastAPI (or Flask if you used it)  
+- **Framework**: FastAPI  
 - **AI**: Google Gemini API  
-- **Cache/DB**: Redis  
-- **Deployment**: Vercel / Docker / Any cloud platform  
+- **Cache/DB**: Redis (UpStash)
+- **Deployment**: Render / Docker / Railway  
 - **Others**: Pydantic, Requests/HTTPX  
 
 ---
