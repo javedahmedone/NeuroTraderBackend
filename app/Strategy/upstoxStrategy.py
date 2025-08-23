@@ -1,14 +1,16 @@
 from SmartApi import SmartConnect
 from fastapi import HTTPException
+from fastapi.responses import RedirectResponse
 import pyotp
 from Strategy.baseStrategy import BaseStrategy
 from services.geminiService import GeminiService
-from global_constant import constants
+from global_constant import brokerConstants, constants
 from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, StockOrderRequest, UserPromptRequest
 from services.stockFetchingService import StockFetchingService
+import urllib.parse
 
 
-class AngelOneStrategy(BaseStrategy):
+class UpstoxStrategy(BaseStrategy):
     def __init__(self):
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
@@ -86,7 +88,7 @@ class AngelOneStrategy(BaseStrategy):
         try:
             holdingsData = smart_api.allholding()  
             print(holdingsData)          
-            if holdingsData.get("status") is True:# and navigateFrom == constants.USERPROMPT:
+            if holdingsData.get("status") is True and navigateFrom == constants.USERPROMPT:
                 mapHoldingsData = self.__mapHoldingsData(holdingsData)
                 return mapHoldingsData
             return holdingsData
@@ -109,19 +111,36 @@ class AngelOneStrategy(BaseStrategy):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     
-    def login(self, data: LoginRequest) -> LoginResponse:
-        smart_api = SmartConnect(api_key=data.apiKey)
-        totp = pyotp.TOTP(data.totp).now()
-        session = smart_api.generateSession(data.clientcode, data.password, totp)
-        print("Session data:", session)
-        if not session["status"]:
-            raise HTTPException(status_code=401, detail="Login failed: " + session["message"])
-        jwt = session["data"]["jwtToken"]
-        refresh = session["data"]["refreshToken"]
-        clientCode = session["data"]["clientcode"]
-        name =  session["data"]["name"]
-        feedToken = session["data"]["feedToken"]
-        return LoginResponse(clientCode=clientCode, jwt=jwt, refreshToken=refresh,userName=name, feedToken=feedToken)
+    def login(self, data: LoginRequest): # -> LoginResponse:
+        apiKey = data.apiKey
+        redirect_uri = brokerConstants.Upstox_Redirect_URI     # your redirect URL
+
+        rurl = urllib.parse.quote(redirect_uri, safe="")
+    # Construct the authorization URL
+        uri = (
+            f"https://api.upstox.com/v2/login/authorization/dialog"
+            f"?response_type=code"
+            f"&client_id={apiKey}"
+            f"&redirect_uri={rurl}"
+        )
+        print(uri)
+        return RedirectResponse(uri)
+        # Redirect user to Upstox authorization page
+        return "RedirectResponse"
+
+        return "upstox sucessful"
+        # smart_api = SmartConnect(api_key=data.apiKey)
+        # totp = pyotp.TOTP(data.totp).now()
+        # session = smart_api.generateSession(data.clientcode, data.password, totp)
+        # print("Session data:", session)
+        # if not session["status"]:
+        #     raise HTTPException(status_code=401, detail="Login failed: " + session["message"])
+        # jwt = session["data"]["jwtToken"]
+        # refresh = session["data"]["refreshToken"]
+        # clientCode = session["data"]["clientcode"]
+        # name =  session["data"]["name"]
+        # feedToken = session["data"]["feedToken"]
+        # return LoginResponse(clientCode=clientCode, jwt=jwt, refreshToken=refresh,userName=name, feedToken=feedToken)
 
     def extract_required_headers(self, headers: dict) -> bool:
         required = ["apikey", "clientcode", "authorization", "refresh"]
@@ -135,7 +154,6 @@ class AngelOneStrategy(BaseStrategy):
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
         userHoldings = self.getHoldings(headers, constants.NUll)
-        print(userHoldings)
         data = self.geminiService.processUserRequest(userHoldings, userPrompt)
         return data
     
@@ -236,3 +254,7 @@ class AngelOneStrategy(BaseStrategy):
             }
             holdings.append(obj)
         return holdings
+
+
+
+

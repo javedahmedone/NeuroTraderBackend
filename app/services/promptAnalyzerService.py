@@ -1,5 +1,5 @@
 from Strategy.brokerFactory import BrokerFactory
-from models.schemas import CancelOrderRequest, UserPromptRequest
+from models.schemas import  UserPromptRequest
 from services.geminiService import GeminiService
 from global_constant import constants
 from services.intentDetectionService import IntentDetectionService
@@ -10,8 +10,6 @@ class PromptAnalyzerService():
         self.intent_service = intent_service
         self.stock_fetching_service = stock_fetching_service
         self.gemini_service =  gemini_service
-        
-
 
     def processUserRequest(self, prompt: str, headers: dict):
         promptResult =  self.gemini_service.detect_intent(prompt)  
@@ -31,7 +29,6 @@ class PromptAnalyzerService():
             promptObject.symbol = stockData.symbol
             promptObject.token = stockData.token   
 
-            # data.quantity = promptResult["quantity"]
         print("==updated datat  ==",data)
         performAction = self.performAction(promptResult, promptObject, headers, prompt)
         return performAction

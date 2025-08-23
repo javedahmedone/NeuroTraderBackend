@@ -1,36 +1,20 @@
+from pymongo import MongoClient
 import redis
 from rapidfuzz import process
 from typing import Optional, List
 from config import REDIS_URL
+from global_constant import constants
 from models.schemas import StockOrderRequest
 
-
 class StockFetchingService:
-    def __init__(self):
+    def __init__(self):  
         self.redis = redis.Redis.from_url(REDIS_URL)
+        self.client = MongoClient(constants.MONGO_URL)
 
-    # ✅ Save stock into Redis
-    # def save_stock(self, stock_key: str, stock_data: dict):
-    #     """
-    #     Stores stock data as a hash in Redis and maintains helper sets/maps
-    #     stock_key example: "stock:tcs-eq"
-    #     stock_data example:
-    #     {
-    #         "symbol": "TCS-EQ",
-    #         "token": "11536",
-    #         "instrumenttype": "EQ",
-    #         "name": "tata consultancy services limited"
-    #     }
-    #     """
-    #     # Store full stock as hash
-    #     self.redis.hset(stock_key, mapping=stock_data)
-
-    #     # Maintain sets for search
-    #     self.redis.sadd("stock:symbols", stock_data["symbol"].lower())
-    #     self.redis.sadd("stock:names", stock_data["name"].lower())
-
-    #     # Maintain direct mapping: name → symbol
-    #     self.redis.hset("stock:name_to_symbol", stock_data["name"].lower(), stock_data["symbol"].lower())
+        # self.client  = MongoClient(uri, tlsCAFile=certifi.where())
+        self.db = self.client["stockdb"]            # Database name
+        self.collection = self.db["companies"] 
+        print(self.db.list_collection_names())  
 
     # ✅ Fetch a stock by Redis key
     def getStockByKey(self, stock_key: str, quantity: int) -> Optional[StockOrderRequest]:
@@ -107,3 +91,47 @@ class StockFetchingService:
 
         print("⚠️ No stock match found for any prompt.")
         return None
+
+    def stockBySearchQuery(self, query: str):
+        pipeline = [
+            {
+                "$search": {
+                    "index": "default",   # 🔹 replace with your index name
+                    "compound": {
+                        "should": [
+                            {
+                                "text": {
+                                    "query": query,
+                                    "path": "company_name",
+                                    "fuzzy": { "maxEdits": 1 }  # allow typos
+                                }
+                            },
+                            {
+                                "text": {
+                                    "query": query,
+                                    "path": "symbol",
+                                    "fuzzy": { "maxEdits": 1 }
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            {"$limit": 10},   # only return top 10 results
+            {
+                "$project": {
+                    "_id": 0,
+                    "symbol": 1,
+                    "company_name": 1
+                }
+            }
+        ]
+
+        results = list(self.collection.aggregate(pipeline))
+        stocksData = []
+        for item in results:
+            stocksData.append({
+                "symbol": item["symbol"],
+                "company_name": item["company_name"]
+            })
+        return stocksData

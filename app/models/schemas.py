@@ -2,11 +2,12 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
-    clientcode: str
-    password: str
-    totp: str
-    apiKey: str
-    brokerName: str
+    clientcode: Optional[str] = None
+    password: Optional[str] = None
+    totp: Optional[str] = None
+    apiKey: Optional[str] = None
+    apiSecret : Optional[str] =None
+    brokerName: Optional[str] = None
 
 
 
@@ -37,6 +38,10 @@ class UserPromptRequest(BaseModel):
     token: int
     symbol: str | None = None
 
+
+class SearchedStockModel(BaseModel):
+    symbol : str
+    companyName : str
 
 
 # class StockOrderRequest(BaseModel):

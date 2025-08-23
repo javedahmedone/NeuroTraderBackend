@@ -12,7 +12,7 @@ rapidfuzz
 redis
 ijson
 google-genai
-
+pymongo[srv]
 
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 

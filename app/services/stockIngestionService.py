@@ -3,23 +3,23 @@ import ijson
 import redis
 import csv
 import os
-
+from pymongo import MongoClient
 from config import REDIS_URL
-
+from global_constant import constants
 
 class StockIngestionService:   
     def __init__(self):
         base_path = os.getcwd()  
         self.csv_path = os.path.join(base_path,  "Files", "EQUITY_L.csv")
+        self.client = MongoClient(constants.MONGO_URL)
+        self.r = redis.Redis.from_url(REDIS_URL)
+        self.db = self.client["stockdb"]            # Database name
+        self.collection = self.db["companies"]      # Collection name
+        self.json_url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
+
         # ✅ Ensure CSV exists
         if not os.path.exists(self.csv_path):
             raise FileNotFoundError(f"CSV file not found at: {self.csv_path}")
-
-        # ✅ Redis connection
-        self.r = redis.Redis.from_url(REDIS_URL)
-
-        # ✅ Angel One Scrip Master URL
-        self.json_url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
 
     def stream_nse_equities(self):
         print("🔍 Streaming & filtering NSE stocks...")
@@ -33,7 +33,6 @@ class StockIngestionService:
                 symbol = row['SYMBOL'].strip().upper()
                 name = row['NAME OF COMPANY'].strip().lower()
                 symbol_to_name[symbol] = name
-
         response = requests.get(self.json_url, stream=True)
         objects = ijson.items(response.raw, "item")
 
@@ -53,56 +52,27 @@ class StockIngestionService:
                     "instrumenttype": "EQ"
                 }
 
-
-
     def store_to_redis(self):
         count = 0
         pipe = self.r.pipeline(transaction=False)
-
         for stock in self.stream_nse_equities():
             redis_key = f"stock:{stock['symbol'].lower()}"
             stock_name_key = f"stock:{stock['name'].lower()}"
             stock_symbol = stock["symbol"].lower()
-
-            # Store symbol as the value
+            mongoDb = {
+                "symbol": stock['symbol'],
+                "company_name": stock['name']
+            }
+            self.collection.insert_one(mongoDb)
             pipe.set(stock_name_key, stock_symbol)
-            # Store full stock as hash
             pipe.hset(redis_key, mapping=stock)
-            # Maintain sets and mapping
             pipe.sadd("stock:symbols", stock_symbol)
             pipe.sadd("stock:names", stock["name"].lower())
-
             count += 1
-
-            # Execute in batches of 200 (avoid timeouts on Upstash)
             if count % 200 == 0:
                 pipe.execute()
-
-        # Final execute for remaining stocks
         pipe.execute()
-
         print(f"✅ Loaded {count} NSE equity stocks into Redis.")
-
-    # def store_to_redis1(self):
-    #         """Store streamed stocks in Redis."""
-    #         print("🚀 Storing NSE equity stocks in Redis...")
-
-    #         # Clear old data
-    #         self.r.delete("stock:names")
-    #         self.r.delete("stock:symbols")
-
-    #         count = 0
-    #         for stock in self.stream_nse_equities():
-    #             redis_key = f"stock:{stock['symbol'].lower()}"
-    #             self.r.hset(redis_key, mapping=stock)
-    #             self.r.hset("stock:name_to_symbol", stock["name"].lower(), stock["symbol"].lower())
-
-    #             # self.r.sadd("stock:names", stock["name"].lower())
-    #             # self.r.sadd("stock:symbols", stock["symbol"].lower())
-
-    #             count += 1
-
-    #         print(f"✅ Loaded {count} NSE equity stocks into Redis.")
 
     def store_stock(self):
         """Shortcut method to store all stocks."""
