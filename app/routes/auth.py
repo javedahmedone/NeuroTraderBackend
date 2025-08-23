@@ -4,7 +4,6 @@ from services.brokerService import BrokerService
 
 router = APIRouter()
 
-# @router.post("/login", response_model=LoginResponse)
 @router.post("/login")
 def login(
     request: LoginRequest
