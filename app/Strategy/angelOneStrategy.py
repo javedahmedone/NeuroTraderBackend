@@ -86,7 +86,7 @@ class AngelOneStrategy(BaseStrategy):
         try:
             holdingsData = smart_api.allholding()  
             print(holdingsData)          
-            if holdingsData.get("status") is True:# and navigateFrom == constants.USERPROMPT:
+            if holdingsData.get("status") is True and navigateFrom == constants.USERPROMPT:
                 mapHoldingsData = self.__mapHoldingsData(holdingsData)
                 return mapHoldingsData
             return holdingsData
