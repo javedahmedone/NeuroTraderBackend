@@ -14,7 +14,6 @@ class StockFetchingService:
         # self.client  = MongoClient(uri, tlsCAFile=certifi.where())
         self.db = self.client["stockdb"]            # Database name
         self.collection = self.db["companies"] 
-        print(self.db.list_collection_names())  
 
     # ✅ Fetch a stock by Redis key
     def getStockByKey(self, stock_key: str, quantity: int) -> Optional[StockOrderRequest]:
@@ -34,6 +33,7 @@ class StockFetchingService:
                 token=data[b'token'].decode('utf-8'),
                 instrumenttype=data[b'instrumenttype'].decode('utf-8'),
                 quantity=quantity,
+                isinNumber=data[b'isinNumber'].decode('utf-8'),
                 transactionType=""
             )
         except Exception as e:

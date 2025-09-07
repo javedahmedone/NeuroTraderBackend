@@ -25,6 +25,7 @@ class StockIngestionService:
         print("🔍 Streaming & filtering NSE stocks...")
             
         symbol_to_name = {}
+        symbol_to_isin = {}
         with open(self.csv_path, 'r', newline='', encoding='utf-8-sig') as csvfile:
             reader = csv.DictReader(csvfile)
             reader.fieldnames = [field.strip() for field in reader.fieldnames]
@@ -32,7 +33,9 @@ class StockIngestionService:
                 row = {k.strip(): v for k, v in row.items()}
                 symbol = row['SYMBOL'].strip().upper()
                 name = row['NAME OF COMPANY'].strip().lower()
+                isinNumber = row['ISIN NUMBER']
                 symbol_to_name[symbol] = name
+                symbol_to_isin[symbol] = isinNumber
         response = requests.get(self.json_url, stream=True)
         objects = ijson.items(response.raw, "item")
 
@@ -41,15 +44,18 @@ class StockIngestionService:
             curr_name = obj.get("name", "").strip()
             exch_seg = obj.get("exch_seg", "").strip().upper()
             token = str(obj.get("token", "")).strip()
+            # isin =  obj.get("ISIN NUMBER")
             symbol in symbol_to_name
             # ✅ Filter valid NSE equity (BE/EQ segment)
             if  curr_name in symbol_to_name and exch_seg == "NSE" and symbol.endswith("-EQ") and name and token:
                 name = symbol_to_name[curr_name]
+                isinNumber =  symbol_to_isin[curr_name]
                 yield {
                     "symbol": symbol,
                     "name": name.lower(),
                     "token": token,
-                    "instrumenttype": "EQ"
+                    "instrumenttype": "EQ",
+                    "isinNumber": isinNumber
                 }
 
     def store_to_redis(self):
@@ -61,7 +67,8 @@ class StockIngestionService:
             stock_symbol = stock["symbol"].lower()
             mongoDb = {
                 "symbol": stock['symbol'],
-                "company_name": stock['name']
+                "company_name": stock['name'],
+                "isinNumber" : stock['isinNumber'].upper()
             }
             self.collection.insert_one(mongoDb)
             pipe.set(stock_name_key, stock_symbol)

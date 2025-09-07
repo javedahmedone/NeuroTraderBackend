@@ -10,7 +10,7 @@ INTENT_KEYWORDS = {
     "place_order": [
         "place order", "buy order", "buy stock", "place new order", "buy shares",
         "purchase stock", "buy 1 stock", "purchase shares", "buy 1 share",
-        "buy tata consultancy", "i want to buy", "get me stock", "order shares"
+        "i want to buy", "get me stock", "order shares"
     ],
     "sell_order": [
         "sell order", "i want to sell", "sell my stock", "sell shares",
@@ -77,6 +77,7 @@ class GeminiService:
             2. Extract the **stock name** (if mentioned, as an array ).
             3. Extract the **quantity** (if mentioned, as a number, else null).
             4. Extract all **order IDs** mentioned (as an array of numbers or string, else empty array).
+            5. If it is a **limit order**, also extract the **limit price** (number). If not applicable, return null.
 
 
             ### Format your response as JSON give me clean json no extra quotes:
@@ -85,6 +86,7 @@ class GeminiService:
             "stock_name": [list of stock name or empty array]  
             "quantity": number or null,
             "orderids": [list of numbers or stirng  or empty array]
+            "limit_price": [list of numbers   or empty array]
 
             }}
             ### User input:
@@ -106,12 +108,14 @@ class GeminiService:
                 intent = "unknown"
             raw_orderids = data.get("orderids", [])
             orderids = [oid.lstrip("-").strip() for oid in raw_orderids if isinstance(oid, str)]
+            limitPrice = data.get("limit_price",[])
 
             return {
                 "intent": intent,
                 "stock_name": data.get("stock_name",[]),
                 "quantity": data.get("quantity",[]),
-                "orderids": orderids
+                "orderids": orderids,
+                "limitPrice": limitPrice
             }
         except Exception as e:
             print("❌ Failed to parse Gemini response:", response.text)

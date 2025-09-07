@@ -15,7 +15,8 @@ google-genai
 pymongo[srv]
 
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-
+{
+# status:"success"
 
 # docker build -t lite-fastapi-app .
 # docker run -d -p 5000:5000 lite-fastapi-app
@@ -35,3 +36,37 @@ pymongo[srv]
 
 
 # AIzaSyBo2hVplFeqBWX_92hBTF5TwukVOXcD6oQ -- geminm
+
+
+
+# {
+#   "mappings": {
+#     "dynamic": false,
+#     "fields": {
+#       "company_name": {
+#         "analyzer": "my_autocomplete",
+#         "type": "string"
+#       },
+#       "symbol": {
+#         "analyzer": "my_autocomplete",
+#         "type": "string"
+#       }
+#     }
+#   },
+#   "analyzers": [
+#     {
+#       "charFilters": [],
+#       "name": "my_autocomplete",
+#       "tokenFilters": [
+#         {
+#           "type": "lowercase"
+#         }
+#       ],
+#       "tokenizer": {
+#         "maxGram": 20,
+#         "minGram": 2,
+#         "type": "edgeGram"
+#       }
+#     }
+#   ]
+# }

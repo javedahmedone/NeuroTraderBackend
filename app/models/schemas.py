@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Union, Optional, List, Dict
 from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
@@ -8,15 +8,16 @@ class LoginRequest(BaseModel):
     apiKey: Optional[str] = None
     apiSecret : Optional[str] =None
     brokerName: Optional[str] = None
+    code: Optional[str] = None
 
 
 
 class LoginResponse(BaseModel):
-    clientCode: str
-    jwt: str
-    refreshToken: str
-    userName : str
-    feedToken: str
+    clientCode: Optional[str] = None
+    jwt: Optional[str] = None
+    refreshToken: Optional[str] = None
+    userName : Optional[str] = None
+    feedToken: Optional[str] = None
 
 class StockOrderRequest(BaseModel):
     symbol: str 
@@ -25,6 +26,8 @@ class StockOrderRequest(BaseModel):
     transactionType: str
     name: str | None = None
     instrumenttype: str | None = None   
+    isinNumber: str | None = None   
+    limitPrice: list[int] = Field(default_factory=list)
 
 class CancelOrderRequest(BaseModel):
     variety :str
@@ -37,23 +40,24 @@ class UserPromptRequest(BaseModel):
     stock_name : list[str] = Field(default_factory=list)
     token: int
     symbol: str | None = None
+    isinNumber : str  | None = None
+    limitPrice: list[int] = Field(default_factory=list)  # ✅ always a list
 
 
 class SearchedStockModel(BaseModel):
     symbol : str
     companyName : str
 
+class ResponseModel(BaseModel):
+    status: str
+    statusCode: int
+    data: Optional[Union[Dict, List[Dict]]] = None
+    userIntent :str | None = None
+    errorMessage : str | None = None
 
-# class StockOrderRequest(BaseModel):
-#     variety: str                # e.g. "NORMAL"
-#     tradingsymbol: str         # e.g. "SBIN-EQ"
-#     symboltoken: str           # e.g. "3045"
-#     transactiontype: str       # e.g. "BUY"
-#     exchange: str              # e.g. "NSE"
-#     ordertype: str             # e.g. "LIMIT"
-#     producttype: str           # e.g. "INTRADAY"
-#     duration: str              # e.g. "DAY"
-#     price: str                 # e.g. "19500" (can also be float)
-#     squareoff: str             # e.g. "0"
-#     stoploss: str              # e.g. "0"
-#     quantity: str              # e.g. "1"
+
+# class HoldingDetailsModel(BaseModel):
+#      "status": ,
+#      "message": "SUCCESS",
+#      "errorcode": "",
+
