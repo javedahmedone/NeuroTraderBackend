@@ -15,7 +15,7 @@ google-genai
 pymongo[srv]
 
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-{
+
 # status:"success"
 
 # docker build -t lite-fastapi-app .
