@@ -20,30 +20,12 @@ def login(
 
 @router.get("/callback/{broker}")
 def callback(request: Request, code: str = None):
+    print("✅ Callback received with code:", code)
+    print(GetSecrets().getFrontendUrl())  # https://frontend-production.up.railway.app
+    print(GetSecrets().getBackendUrl()) 
     brokerName=request.path_params['broker']
     FrontendUrl = GetSecrets().getFrontendUrl()
     react_url = f"{FrontendUrl}/callback/{brokerName}?code={code}"
     print("Redirecting to:", react_url)
     return RedirectResponse(url=react_url)
-    # if not code:
-    #     return JSONResponse({"error": "No code received"}, status_code=400)
-
-    # # Step 3: Exchange code for access token
-    # token_url = "https://api.upstox.com/v2/login/authorization/token"
-    # payload = {
-    #     "code": code,
-    #     "client_id": API_KEY,
-    #     "client_secret": SECRET_KEY,
-    #     "redirect_uri": REDIRECT_URI,
-    #     "grant_type": "authorization_code",
-    # }
-    # headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
-    # res = requests.post(token_url, data=payload, headers=headers)
-    # data = res.json()
-
-    # # ✅ Send token back to frontend
-    # return JSONResponse(data)
-
-# def callback(broker: str, code: str):
-#     return {"broker": broker, "code": code}
+    
