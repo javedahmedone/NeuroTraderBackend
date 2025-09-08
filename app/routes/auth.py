@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from models.schemas import LoginRequest, LoginResponse
+from services.Common.GetSecrets import GetSecrets
 from services.brokerService import BrokerService
-
 router = APIRouter()
 
 @router.post("/login")
@@ -18,10 +19,12 @@ def login(
 
 
 @router.get("/callback/{broker}")
-
 def callback(request: Request, code: str = None):
-    print(code)
-    print(request)
+    brokerName=request.path_params['broker']
+    FrontendUrl = GetSecrets().getFrontendUrl()
+    react_url = f"{FrontendUrl}/callback/{brokerName}?code={code}"
+    print("Redirecting to:", react_url)
+    return RedirectResponse(url=react_url)
     # if not code:
     #     return JSONResponse({"error": "No code received"}, status_code=400)
 

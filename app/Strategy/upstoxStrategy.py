@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from pymongo import MongoClient
 from Strategy.baseStrategy import BaseStrategy
+from services.Common.GetSecrets import GetSecrets
 from services.geminiService import GeminiService
 from global_constant import constants
 from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, ResponseModel, StockOrderRequest, UserPromptRequest
@@ -9,6 +10,7 @@ from services.stockFetchingService import StockFetchingService
 from global_constant.BrokerUrl import upstoxUrl
 import requests
 import json
+
 class UpstoxStrategy(BaseStrategy):
     def __init__(self):
         self.stockFetchService = StockFetchingService()
@@ -170,11 +172,13 @@ class UpstoxStrategy(BaseStrategy):
         return profileData
     
     def login(self, data: LoginRequest): # -> LoginResponse:
+        BackendUrl = GetSecrets().getBackendUrl()
+
         payload = {
             'code': data.code,
             'client_id': data.apiKey,
             'client_secret': data.apiSecret,
-            'redirect_uri': "http://localhost:3000/callback/upstox",
+            'redirect_uri': f"{BackendUrl}/auth/callback/upstox", #"http://localhost:3000/callback/upstox",
             'grant_type': 'authorization_code'
         }
         headers = {
