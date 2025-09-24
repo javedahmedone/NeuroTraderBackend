@@ -223,8 +223,12 @@ class UpstoxStrategy(BaseStrategy):
             )
             return cancelOrderData
         
-        authorization =  headers["authorization"] 
-        orderId =   data.orderIds[0] 
+        authorization =  headers["authorization"]
+        if userPrompt == constants.NUll :
+            orderId = data["orderIds"][0] if isinstance(data["orderIds"], list) else data["orderIds"]
+        else :
+            orderId = data.orderid
+        # orderId =   data.orderIds[0] 
         url = upstoxUrl.CANCEL_ORDER_BY_ORDERID+ orderId
         payload={}
         headers = {

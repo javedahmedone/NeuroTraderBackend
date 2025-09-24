@@ -33,7 +33,7 @@ pymongo[srv]
 
 # image link  -- docker.io/javeddocker98/my-fastapi-app:latest
 
-
+# r/javeddocker98/lite-fastapi-app
 
 # AIzaSyBo2hVplFeqBWX_92hBTF5TwukVOXcD6oQ -- geminm
 
