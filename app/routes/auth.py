@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from models.schemas import LoginRequest, LoginResponse
+from models.schemas import LoginRequest
 from services.Common.GetSecrets import GetSecrets
 from services.brokerService import BrokerService
 router = APIRouter()

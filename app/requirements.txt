@@ -3,17 +3,13 @@ uvicorn
 smartapi-python
 pyotp
 python-dotenv
-# transformers
-# torch
 logzero
 websocket-client
 rapidfuzz
-# pandas
 redis
 ijson
 google-genai
 pymongo[srv]
-
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 # status:"success"

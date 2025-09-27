@@ -48,6 +48,7 @@ class SearchedStockModel(BaseModel):
     symbol : str
     companyName : str
 
+
 class ResponseModel(BaseModel):
     status: str
     statusCode: int
@@ -55,9 +56,13 @@ class ResponseModel(BaseModel):
     userIntent :str | None = None
     errorMessage : str | None = None
 
-
-# class HoldingDetailsModel(BaseModel):
-#      "status": ,
-#      "message": "SUCCESS",
-#      "errorcode": "",
+class MarketData(BaseModel):
+    stockName: str | None = None      # Full company name
+    ltp: float | None = None          # Last traded price
+    perChange: float | None = None     # % change from previous close
+    symbol: str   | None = None        # Stock ticker symbol
+    openPrice : float | None = None   # Absolute price gain/loss
+    closePrice : float | None = None   # Absolute price gain/loss
+    isin : str | None = None
+    todayPriceChange : float | None = None
 

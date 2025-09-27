@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 import requests
 import ijson
 import redis
@@ -6,8 +7,12 @@ import os
 from pymongo import MongoClient
 from config import REDIS_URL
 from global_constant import constants
+import json
+from typing import Any, List
 
-class StockIngestionService:   
+from models.schemas import MarketData
+
+class RedisClientService:   
     def __init__(self):
         base_path = os.getcwd()  
         self.csv_path = os.path.join(base_path,  "Files", "EQUITY_L.csv")
@@ -84,4 +89,39 @@ class StockIngestionService:
     def store_stock(self):
         """Shortcut method to store all stocks."""
         self.store_to_redis()
+    
+    # def set(self, key: str, value: any, ttl: int = None):
+    #     # value = json.dumps(value)
+    #     print(value)
+    #     self.r.set(key, value, ex=ttl)
+    def _convert_for_json(self, obj: Any) -> Any:
+        """
+        Recursively convert MarketData (or BaseModel) into dict so it can be JSON serialized.
+        """
+        if isinstance(obj, BaseModel):
+            return obj.dict()
+        elif isinstance(obj, list):
+            return [self._convert_for_json(i) for i in obj]
+        elif isinstance(obj, dict):
+            return {k: self._convert_for_json(v) for k, v in obj.items()}
+        return obj
+
+    def set(self, key: str, value: Any, ttl: int = None):
+        """
+        Store value in Redis. Works for MarketData, list, or dict.
+        """
+        value_to_store = json.dumps(self._convert_for_json(value))
+        self.r.set(key, value_to_store, ex=ttl)
+
+    def get(self, key: str) -> Any:
+        """
+        Retrieve value from Redis and parse JSON.
+        """
+        raw = self.r.get(key)
+        if raw is None:
+            return None
+        return json.loads(raw)
+    
+    def delete(self, key: str):
+        self.r.delete(key)
 
