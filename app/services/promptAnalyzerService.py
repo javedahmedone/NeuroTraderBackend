@@ -1,5 +1,6 @@
 from Strategy.brokerFactory import BrokerFactory
-from models.schemas import  ResponseModel, UserPromptRequest
+from models.schemas import UserPromptRequest
+from services.Common.ResponseBuilder import ResponseBuilder
 from services.geminiService import GeminiService
 from global_constant import constants, errorMessageConstants
 from services.intentDetectionService import IntentDetectionService
@@ -22,17 +23,10 @@ class PromptAnalyzerService():
             token=0,
             isinNumber = None,
             limitPrice=promptResult.get("limitPrice") or []  # ✅ ensures list, not None
-        )    
-        validatePromptData = self.__validatePromptData(promptResult)
-        if validatePromptData is not None:
-            return  ResponseModel(
-                status=constants.ERROR,
-                statusCode=400,
-                data=[],
-                userIntent=constants.VALIDATIONERROR,
-                errorMessage=validatePromptData
-            ) 
-        data = promptResult
+        )
+        if promptObject.userIntent is constants.PLACE_ORDER_PROMPT or promptObject.userIntent is constants.SELL_ORDER_PROMPT:   
+            validatePromptData = self.__validatePromptData(promptResult)
+            return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(validatePromptData).userIntent(constants.VALIDATIONERROR).build()
         if promptResult["stock_name"] is not None and  len(promptResult["stock_name"]) == 1:
             stockData = self.stock_fetching_service.extract_stock_from_prompt(promptResult["stock_name"])
             promptObject.stock_name = stockData.name
@@ -41,7 +35,7 @@ class PromptAnalyzerService():
             promptObject.token = stockData.token 
             promptObject.isinNumber =  stockData.isinNumber  
 
-        print("==updated datat  ==",data)
+        print("==updated datat  ==",promptResult)
         performAction = self.performAction(promptResult, promptObject, headers, prompt)
         return performAction
     
@@ -50,21 +44,21 @@ class PromptAnalyzerService():
         brokerName = headers["brokername"]
         brokerFactory = BrokerFactory(brokerName).get_broker()
         response = {}
-        if userIntent == "place_order": 
+        if userIntent == constants.PLACE_ORDER_PROMPT: 
             response_data = self.__validateStockQuantity(data)
             if response_data["success"] is True:
                 response_data = brokerFactory.placeOrder(headers, data, constants.BUY)
                 response_data.userIntent = constants.BUYORDER
             return response_data
 
-        elif userIntent == "sell_order":
+        elif userIntent == constants.SELL_ORDER_PROMPT:
             response_data = self.__validateStockQuantity(data)
             if response_data["success"] is True:
                 response_data = self.__placeOrder(brokerFactory, headers, data, constants.SELL )
                 response_data.userIntent = constants.SELLORDER
             return response_data
        
-        elif userIntent == "sell_all":
+        elif userIntent == constants.SELL_ALL_PROMPT:
             response_data = []
             holdings_data = self.__getHoldings(brokerFactory,headers);
             for holding in holdings_data["data"]["holdings"]:
@@ -76,28 +70,28 @@ class PromptAnalyzerService():
                 "data": response_data
             }
 
-        elif userIntent == "get_orders":
+        elif userIntent == constants.GET_ORDERS_PROMPT:
             response_data = self.___getOrders(brokerFactory, headers)
             response_data.userIntent = constants.GETORDERS
             return response_data
 
-        elif userIntent == "view_holdings" or userIntent == "get_total_holdings":
+        elif userIntent == constants.VIEW_HOLDING_PROMPT or userIntent == constants.GET_TOTAL_HOLDINGS_PROMPT:
             response_data = self.__getHoldings(brokerFactory,headers)
             response_data.userIntent = constants.HOLDINGS
             return response_data 
 
-        elif userIntent == "analyze_portfolio":
+        elif userIntent == constants.ANALYZE_PORTFOLIO_PROMPT:
             response_data = brokerFactory.portfolioAnalysis(headers, prompt)
             response = {
                 "userIntent": constants.ANALYZE_PORTFOLIO,
                 "data": response_data
             }
-        elif userIntent == "cancel_order":
+        elif userIntent == constants.CANCEL_ORDER_PROMPT:
             response_data = brokerFactory.cancelOrder(headers, data, constants.NUll)
             response_data.userIntent = constants.CANCELORDER
             return response_data
         
-        elif userIntent == "cancel_all":
+        elif userIntent == constants.CANCEL_ALL_ORDERS_PROMPT:
             response_data = brokerFactory.cancelAllOrders(headers)  # ✅ fixed          
             response = {
                 "userIntent": constants.CANCELALLORDERS,

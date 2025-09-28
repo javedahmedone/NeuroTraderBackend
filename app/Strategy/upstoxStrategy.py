@@ -2,7 +2,9 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from pymongo import MongoClient
 from Strategy.baseStrategy import BaseStrategy
+from services.Common.HeaderBuilder import HeaderBuilder
 from services.Common.GetSecrets import GetSecrets
+from services.Common.ResponseBuilder import ResponseBuilder
 from services.geminiService import GeminiService
 from global_constant import constants
 from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, ResponseModel, StockOrderRequest, UserPromptRequest
@@ -48,11 +50,7 @@ class UpstoxStrategy(BaseStrategy):
                 "slice": True
                 })
 
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization':constants.BEARER + authorization,
-            }
-
+            headers = HeaderBuilder().with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER + authorization) 
             response = requests.request("POST", upstoxUrl.PLACE_ORDER, headers=headers, data=orderparams)
             result = json.loads(response.text)
             placeOrderData = ResponseModel(
@@ -65,12 +63,15 @@ class UpstoxStrategy(BaseStrategy):
                 orderDetails =  self.__orders(orderId, authorization)
                 if orderDetails.status == constants.SUCCESS : 
                     ordersData =  self.__mapPlaceOrderData(orderDetails)
-                    placeOrderData.data = ordersData 
+                    # placeOrderData.data = ordersData 
+                    return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(ordersData).build()
+
                 else:
                     return orderDetails
-            else :
-                placeOrderData.errorMessage = result["errors"][0]["message"]
-            return placeOrderData
+            # else :
+            #     errorMessage = result["errors"][0]["message"]
+            return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(result["message"]).build()
+
 
         except Exception as e:
             placeOrderData = ResponseModel(
@@ -215,20 +216,21 @@ class UpstoxStrategy(BaseStrategy):
     def cancelOrder(self, headers:dict, data: UserPromptRequest, userPrompt: str):
         result  = self.extract_required_headers(headers)
         if result is False:
-            cancelOrderData = ResponseModel(
-                status=constants.ERROR,
-                statusCode=400,
-                data=[],
-                errorMessage= "Missing required headers: apikey, clientcode, authorization, refresh"
-            )
-            return cancelOrderData
+            errorMessage= "Missing required headers: apikey, clientcode, authorization, refresh"
+            return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(errorMessage).build()
+
+            # cancelOrderData = ResponseModel(
+            #     status=constants.ERROR,
+            #     statusCode=400,
+            #     data=[],
+            # )
+            # return cancelOrderData
         
         authorization =  headers["authorization"]
         if userPrompt == constants.NUll :
             orderId = data["orderIds"][0] if isinstance(data["orderIds"], list) else data["orderIds"]
         else :
             orderId = data.orderid
-        # orderId =   data.orderIds[0] 
         url = upstoxUrl.CANCEL_ORDER_BY_ORDERID+ orderId
         payload={}
         headers = {
@@ -237,14 +239,11 @@ class UpstoxStrategy(BaseStrategy):
         }
         response = requests.request("DELETE",url , headers=headers, data=payload)
         result = json.loads(response.text)
-        cancelOrderData = ResponseModel(
-                status=result["status"],
-                statusCode=response.status_code,
-                data=result,
-                userIntent= None,
-        )
-        if cancelOrderData.status == constants.ERROR:
-            cancelOrderData.errorMessage = "Order Id :"+orderId+result["errors"][0]["message"]
+        if result["status"] == constants.ERROR:
+            errorMessage = "Order Id :"+orderId+result["errors"][0]["message"]
+            return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(errorMessage).build()
+        return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(result["data"]).build()
+
         return cancelOrderData
 
     def cancelAllOrders(self, headers:dict):
@@ -330,7 +329,8 @@ class UpstoxStrategy(BaseStrategy):
         }
         response = requests.request("GET", url, headers=headers, data=payload)
         result =  json.loads(response.text)
-        
+        return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(result["data"]).build()
+
         ordersData = ResponseModel(
             status=result["status"],
             statusCode=response.status_code,

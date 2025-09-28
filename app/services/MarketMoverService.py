@@ -1,9 +1,10 @@
 from typing import List
 from HttpClient.httpClient import HttpClient
 from global_constant import constants
-from models.schemas import MarketData, ResponseModel
+from models.schemas import MarketData
 import json
-from config import REDIS_URL
+from services.Common.HeaderBuilder import HeaderBuilder
+from services.Common.ResponseBuilder import ResponseBuilder
 from services.redisClientService import RedisClientService
 from services.stockFetchingService import StockFetchingService as stockFetchingService
 class MarketMoverService:
@@ -15,14 +16,9 @@ class MarketMoverService:
 
 
     def fetch_nse_gainers(self):
-        cached_data = self._redis.get(constants.CACHE_KEY)
-        if cached_data is not None:
-            return ResponseModel(
-                status=constants.SUCCESS,
-                statusCode=200,
-                data=cached_data,
-                # fromCache=True
-            )
+        cachedData = self._redis.get(constants.CACHE_KEY)
+        if cachedData is not None:
+            return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(cachedData).build()
         headers = {
             'Accept': 'application/json',
         }
@@ -30,13 +26,7 @@ class MarketMoverService:
         losersTempData = []
         response = self._httpClient.get(constants.MARKETMOVERAPI, headers=headers) 
         if response.status_code  != 200:
-            return  ResponseModel(
-                status=constants.ERROR,
-                statusCode=400,
-                data=[],
-                userIntent=constants.VALIDATIONERROR,
-                errorMessage= result.error
-            )
+            return ResponseBuilder().status(constants.ERROR).statusCode(400).build()
         result =  json.loads(response.text)['data']
         for item in result:
             if item['name'].lower() == constants.TODAY_GAINER:
@@ -49,11 +39,7 @@ class MarketMoverService:
         TTL = int(constants.CACHE_TTL)
 
         self._redis.set(constants.CACHE_KEY, result, ttl=TTL)
-        return ResponseModel(
-            status=constants.SUCCESS,
-            statusCode=200,
-            data=result,
-        )
+        return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(result).build()
 
     def __bindStockDetails(self,gainersTempData:any ,losersTempData:any):
         gainersStockSymbol : List[str] = []
@@ -89,12 +75,9 @@ class MarketMoverService:
                 }
             }
         }
-        headers = {
-            "Content-Type": "application/json",
-        }
+        headers =  HeaderBuilder().with_content_type(constants.CONTENT_APPLICATION_JSON)
         # POST request
         response = self._httpClient.post(constants.STOCKPRICEDATA, headers, payload)
-        # requests.post(constants.STOCKPRICEDATA, headers=headers, json=payload)
         if(response.status_code != 200):
             return
         result =  json.loads(response.text)['exchangeAggRespMap']['NSE']["priceLivePointsMap"]

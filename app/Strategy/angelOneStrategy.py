@@ -2,9 +2,10 @@ from SmartApi import SmartConnect
 from fastapi import HTTPException
 import pyotp
 from Strategy.baseStrategy import BaseStrategy
+from services.Common.ResponseBuilder import ResponseBuilder
 from services.geminiService import GeminiService
 from global_constant import constants
-from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, ResponseModel, StockOrderRequest, UserPromptRequest
+from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, StockOrderRequest, UserPromptRequest
 from services.stockFetchingService import StockFetchingService
 
 
@@ -43,34 +44,15 @@ class AngelOneStrategy(BaseStrategy):
                 "quantity": orderparams.quantity
             }
             response = smart_api.placeOrderFullResponse(orderparams)
-            ordersResult = ResponseModel(
-                status = constants.SUCCESS if response["status"] == True else constants.ERROR,
-                statusCode = 200 if response["status"] == True else 400,
-                data = response["data"],
-                errorMessage = response["message"],
-            )
-            if not response.get("status", False):
-                return ordersResult
+            if  response["status"] != True:
+                return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(response["message"]).build() 
             response = smart_api.individual_order_details(response["data"]["uniqueorderid"])
             data =   self.__mapPlaceOrderData(response)
-            ordersResult.data = data
-            return ordersResult
+            return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
         
         except Exception as e:
-                orderData = ResponseModel(
-                    status = "error",
-                    statusCode =401,
-                    data = [],
-                    userIntent = None,
-                    errorMessage = ""
-                )
-                if "NoneType" in  str(e):
-                    return orderData
-                else:
-                    orderData.errorMessage = str(e)
-                    orderData.statusCode = 400
-                return orderData
-
+                errorMessage = str(e)
+                return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(errorMessage).build() 
     
     def getOrders(self, headers: dict, navigateFrom: str):
         authorization =  headers["authorization"]
@@ -79,13 +61,9 @@ class AngelOneStrategy(BaseStrategy):
         smart_api.setAccessToken(token) 
         userOrders =  smart_api.orderBook()
         data  =  self.__mapfetchOrdersData(userOrders)
-        ordersResult = ResponseModel(
-            status = constants.SUCCESS if userOrders["status"] == True else constants.ERROR,
-            statusCode = 200 if userOrders["status"] == True else 400,
-            data = data,
-            errorMessage = userOrders["message"],
-        )
-        return ordersResult
+        if  userOrders["status"] != True:
+            return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(userOrders["message"]).build()
+        return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
 
     def getHoldings(self, headers: dict, navigateFrom: str):
         result = self.extract_required_headers(headers)
@@ -98,21 +76,19 @@ class AngelOneStrategy(BaseStrategy):
         smart_api.setAccessToken(token)
         try:
             holdingsData = smart_api.allholding()  
+            if  holdingsData["errorcode"] != '':
+                return ResponseBuilder().status(constants.ERROR).statusCode(401).build()
+
             print(holdingsData)          
             if holdingsData.get("status") is True and navigateFrom == constants.USERPROMPT:
                 mapHoldingsData = self.__mapHoldingsData(holdingsData)
                 data = mapHoldingsData
             else:
                 data = holdingsData["data"]
-            holdingsResult = ResponseModel(
-                status = constants.SUCCESS if holdingsData["status"] == True else constants.ERROR,
-                statusCode = 200 if holdingsData["status"] == True else 400,
-                data = data,
-                errorMessage = holdingsData["message"],
-                userIntent = None
-            )
-            return holdingsResult
 
+            if  holdingsData["status"] != True:
+                return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(holdingsData["message"]).build()
+            return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
         except HTTPException as http_err:
             raise http_err  # Don't wrap again
         except Exception as e:
@@ -184,13 +160,9 @@ class AngelOneStrategy(BaseStrategy):
         try:
             result = smart_api.cancelOrder(cancelRequest.orderid, cancelRequest.variety)  
             print(result)
-            ordersResult = ResponseModel(
-                status = constants.SUCCESS if result["status"] == True else constants.ERROR,
-                statusCode = 200 if result["status"] == True else 400,
-                data = result["data"],
-                errorMessage = result["message"],
-            )
-            return ordersResult;
+            if  result["status"] != True:
+                return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(result["message"] + " or order is already cancelled").build()
+            return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data("order is successfully cancelled").build()
         except Exception as e:
             raise HTTPException(status_code=500, detail="Unexpected error in AngelOne strategy: " + str(e))
 
@@ -238,7 +210,6 @@ class AngelOneStrategy(BaseStrategy):
             "orderid": userOrders["data"]["orderid"],
             "transactiontype": userOrders["data"]["transactiontype"],
             "orderType": userOrders["data"]["ordertype"]
-
         }
         return ordersData
     
