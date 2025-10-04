@@ -8,9 +8,7 @@ from pymongo import MongoClient
 from config import REDIS_URL
 from global_constant import constants
 import json
-from typing import Any, List
-
-from models.schemas import MarketData
+from typing import Any
 
 class RedisClientService:   
     def __init__(self):
@@ -27,8 +25,7 @@ class RedisClientService:
             raise FileNotFoundError(f"CSV file not found at: {self.csv_path}")
 
     def stream_nse_equities(self):
-        print("🔍 Streaming & filtering NSE stocks...")
-            
+        print("🔍 Streaming & filtering NSE stocks...")          
         symbol_to_name = {}
         symbol_to_isin = {}
         with open(self.csv_path, 'r', newline='', encoding='utf-8-sig') as csvfile:
@@ -70,12 +67,12 @@ class RedisClientService:
             redis_key = f"stock:{stock['symbol'].lower()}"
             stock_name_key = f"stock:{stock['name'].lower()}"
             stock_symbol = stock["symbol"].lower()
-            mongoDb = {
-                "symbol": stock['symbol'],
-                "company_name": stock['name'],
-                "isinNumber" : stock['isinNumber'].upper()
-            }
-            self.collection.insert_one(mongoDb)
+            # mongoDb = {
+            #     "symbol": stock['symbol'],
+            #     "company_name": stock['name'],
+            #     "isinNumber" : stock['isinNumber'].upper()
+            # }
+            # self.collection.insert_one(mongoDb)
             pipe.set(stock_name_key, stock_symbol)
             pipe.hset(redis_key, mapping=stock)
             pipe.sadd("stock:symbols", stock_symbol)
@@ -90,14 +87,8 @@ class RedisClientService:
         """Shortcut method to store all stocks."""
         self.store_to_redis()
     
-    # def set(self, key: str, value: any, ttl: int = None):
-    #     # value = json.dumps(value)
-    #     print(value)
-    #     self.r.set(key, value, ex=ttl)
+  
     def _convert_for_json(self, obj: Any) -> Any:
-        """
-        Recursively convert MarketData (or BaseModel) into dict so it can be JSON serialized.
-        """
         if isinstance(obj, BaseModel):
             return obj.dict()
         elif isinstance(obj, list):
@@ -107,16 +98,10 @@ class RedisClientService:
         return obj
 
     def set(self, key: str, value: Any, ttl: int = None):
-        """
-        Store value in Redis. Works for MarketData, list, or dict.
-        """
         value_to_store = json.dumps(self._convert_for_json(value))
         self.r.set(key, value_to_store, ex=ttl)
 
     def get(self, key: str) -> Any:
-        """
-        Retrieve value from Redis and parse JSON.
-        """
         raw = self.r.get(key)
         if raw is None:
             return None
@@ -125,3 +110,42 @@ class RedisClientService:
     def delete(self, key: str):
         self.r.delete(key)
 
+    def getHashKeyData(self, key):
+        key = key.lower()
+    
+    # Prepend "stock:" only if not already present
+        if not key.startswith("stock:"):
+            key = "stock:" + key
+
+        data =  self.r.hgetall(key)
+        decoded_data = {k.decode("utf-8"): v.decode("utf-8") for k, v in data.items()}
+        return decoded_data
+
+    def getAllStockHashes(self, pattern="stock:*eq", batch_size=500):
+        """
+        Fetch all stock hashes that end with -eq
+        Return as list of dicts [{...}, {...}]
+        """
+        cursor = 0
+        stock_data = []
+
+        while True:
+            cursor, keys = self.r.scan(cursor=cursor, match=pattern, count=batch_size)
+            for key in keys:
+                # key is bytes, convert to str
+                key = key.decode("utf-8")
+
+                if not key.endswith("-eq"):   # extra safety check
+                    continue
+
+                raw_data = self.r.hgetall(key)
+
+                # decode each field in the hash
+                decoded_data = {k.decode("utf-8"): v.decode("utf-8") for k, v in raw_data.items()}
+
+                stock_data.append(decoded_data)
+
+            if cursor == 0:
+                break
+
+        return stock_data

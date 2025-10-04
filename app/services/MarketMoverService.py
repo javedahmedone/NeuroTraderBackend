@@ -5,7 +5,7 @@ from models.schemas import MarketData
 import json
 from services.Common.HeaderBuilder import HeaderBuilder
 from services.Common.ResponseBuilder import ResponseBuilder
-from services.redisClientService import RedisClientService
+from services.RedisClientService import RedisClientService
 from services.stockFetchingService import StockFetchingService as stockFetchingService
 class MarketMoverService:
 
@@ -75,7 +75,7 @@ class MarketMoverService:
                 }
             }
         }
-        headers =  HeaderBuilder().with_content_type(constants.CONTENT_APPLICATION_JSON)
+        headers =  HeaderBuilder().with_content_type(constants.CONTENT_APPLICATION_JSON).build()
         # POST request
         response = self._httpClient.post(constants.STOCKPRICEDATA, headers, payload)
         if(response.status_code != 200):
@@ -87,10 +87,9 @@ class MarketMoverService:
                 live = result[symbol]
                 stock.ltp = live.get("ltp", stock.ltp)
                 stock.openPrice = live.get("open", stock.openPrice)
-                stock.closePrice = live.get("close", stock.closePrice)
-                stock.perChange = round(((live.get("close") - live.get("open")) / live.get("open")) * 100, 2) if live.get("open") else 0.0
-                stock.todayPriceChange =   round(live.get("close") - live.get("open"), 2)
-        
+                stock.closePrice = live.get("ltp", stock.closePrice)
+                stock.perChange = round(((live.get("ltp") - live.get("open")) / live.get("open")) * 100, 2) if live.get("open") else 0.0
+                stock.todayPriceChange =   round(live.get("ltp") - live.get("open"), 2)      
         return stockData
 
             

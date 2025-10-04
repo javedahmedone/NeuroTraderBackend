@@ -66,12 +66,14 @@ class AngelOneStrategy(BaseStrategy):
         return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
 
     def getHoldings(self, headers: dict, navigateFrom: str):
+        tst = self.marketData(headers,"sdf","sd")
+
         result = self.extract_required_headers(headers)
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
 
-        authorization = headers["authorization"]
-        token = authorization.replace("Bearer ", "")
+        token = headers["authorization"].replace("Bearer ", "")
+        # token = authorization.replace("Bearer ", "")
         smart_api = SmartConnect(api_key=headers["apikey"])
         smart_api.setAccessToken(token)
         try:
@@ -166,7 +168,6 @@ class AngelOneStrategy(BaseStrategy):
         except Exception as e:
             raise HTTPException(status_code=500, detail="Unexpected error in AngelOne strategy: " + str(e))
 
-
     def cancelAllOrders(self, headers:dict):
         orders_data = self.getOrders(headers,constants.NUll)
         for order in orders_data:
@@ -178,7 +179,25 @@ class AngelOneStrategy(BaseStrategy):
                 )
                 self.cancelOrder(headers, obj, None)
         return self.getOrders(headers,constants.NUll)
-           
+
+    def marketData(self, headers:dict,exchange: str, symboltoken:str):
+        result  = self.extract_required_headers(headers)
+        if result is False:
+            raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
+        
+        authorization = headers["authorization"]
+        token = authorization.replace("Bearer ", "")
+        smart_api = SmartConnect(api_key=headers["apikey"])
+        smart_api.setAccessToken(token) 
+        payload = {
+            "exchange": "NSE",
+            "symboltoken": "3045",
+            "interval": "TEN_MINUTE",
+            "fromdate": "2025-09-26 10:00",
+            "todate": "2025-09-27 11:00"
+        }
+        result = smart_api.getCandleData(payload)         
+    
     def __mapHoldingsData(self, holdingsData):
         holdings = []
         userHoldings = holdingsData["data"]["holdings"]
@@ -200,6 +219,8 @@ class AngelOneStrategy(BaseStrategy):
         print("==147==",userOrders["data"])
         symbol =  userOrders["data"]["tradingsymbol"]
         data = self.stockFetchService.getStockByKey(symbol,0)
+        transactionType = constants.BUY if userOrders["data"]["transactiontype"].upper() == constants.BUY else constants.SELL
+
         ordersData = {
             "symbol": symbol,
             "name": data.name,
@@ -208,8 +229,10 @@ class AngelOneStrategy(BaseStrategy):
             "orderstatus": userOrders["data"]["orderstatus"],
             "text": userOrders["data"]["text"],
             "orderid": userOrders["data"]["orderid"],
-            "transactiontype": userOrders["data"]["transactiontype"],
-            "orderType": userOrders["data"]["ordertype"]
+            "transactiontype": transactionType,
+            "orderType": userOrders["data"]["ordertype"],
+            "price": userOrders["data"]["price"]
+
         }
         return ordersData
     
@@ -222,6 +245,7 @@ class AngelOneStrategy(BaseStrategy):
         for item in userOrdersData:
             symbol = item["tradingsymbol"]  # Correct key from input JSON
             stock_info = self.stockFetchService.getStockByKey(symbol.lower(), 0)
+            transactionType = constants.BUY if item["transactiontype"].upper() == constants.BUY else constants.SELL
             obj = {
                 "symbol": symbol,
                 "name": stock_info.name.upper(),  # Assuming it's a Pydantic model or object
@@ -230,9 +254,10 @@ class AngelOneStrategy(BaseStrategy):
                 "orderstatus": item["orderstatus"],
                 "text": item["text"],
                 "orderid": item["orderid"],
-                "transactiontype": item["transactiontype"],
+                "transactiontype": transactionType,
                 "updatetime": item["updatetime"],
-                "orderType": item["ordertype"]
+                "orderType": item["ordertype"],
+                "price": item["price"]
             }
             holdings.append(obj)
         return holdings

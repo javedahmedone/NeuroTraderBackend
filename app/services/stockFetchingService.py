@@ -4,7 +4,7 @@ from rapidfuzz import process
 from typing import Optional, List
 from config import REDIS_URL
 from global_constant import constants
-from models.schemas import StockOrderRequest
+from models.schemas import SearchStockModel, StockOrderRequest
 
 class StockFetchingService:
     def __init__(self):  
@@ -92,7 +92,7 @@ class StockFetchingService:
         print("⚠️ No stock match found for any prompt.")
         return None
 
-    def stockBySearchQuery(self, query: str):
+    def stockBySearchQuery(self, query: str) -> List[SearchStockModel]:
         pipeline = [
             {
                 "$search": {
@@ -122,16 +122,24 @@ class StockFetchingService:
                 "$project": {
                     "_id": 0,
                     "symbol": 1,
-                    "company_name": 1
+                    "company_name": 1,
+                    "isinNumber": 1,   # ✅ include isin
+                    "token": 1   
                 }
             }
         ]
 
         results = list(self.collection.aggregate(pipeline))
-        stocksData = []
+        stocksData: list[SearchStockModel] = []
+
+    # ✅ Simple for loop to build the list
         for item in results:
-            stocksData.append({
-                "symbol": item["symbol"],
-                "company_name": item["company_name"]
-            })
+            model = SearchStockModel(
+                stockName=item.get("company_name"),
+                stockSymbol=item.get("symbol"),
+                isinNumber=item.get("isinNumber"),
+                stockToken=item.get("token")
+            )
+            stocksData.append(model)
+
         return stocksData

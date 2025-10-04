@@ -1,6 +1,7 @@
 from fastapi import APIRouter
+from services.Common.MongoClientService import MongoClientService
 from services.stockFetchingService import StockFetchingService
-from services.redisClientService import RedisClientService
+from services.RedisClientService import RedisClientService
 
 
 router = APIRouter()
@@ -15,3 +16,10 @@ def search_companies(query: str):
     data = service.stockBySearchQuery(query)
     print(data)
     return data
+
+@router.get("/SyncMongoFromRedis")
+def search_companies():
+    MongoClientService().bulkInsertDataFromRedis()
+    return "suces"
+    # print(data)
+    # return data

@@ -66,3 +66,9 @@ class MarketData(BaseModel):
     isin : str | None = None
     todayPriceChange : float | None = None
 
+class SearchStockModel(BaseModel):
+    stockName: str | None = None      # Full company name
+    stockSymbol: str | None = None          # Last traded price
+    isinNumber: str | None = None     # % change from previous close
+    stockToken: str   | None = None   
+

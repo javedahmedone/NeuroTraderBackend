@@ -10,6 +10,7 @@ redis
 ijson
 google-genai
 pymongo[srv]
+upstox-python-sdk
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 # status:"success"

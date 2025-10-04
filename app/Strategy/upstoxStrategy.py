@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from pymongo import MongoClient
 from Strategy.baseStrategy import BaseStrategy
+from services.Common.MongoClientService import MongoClientService
 from services.Common.HeaderBuilder import HeaderBuilder
 from services.Common.GetSecrets import GetSecrets
 from services.Common.ResponseBuilder import ResponseBuilder
@@ -17,9 +17,7 @@ class UpstoxStrategy(BaseStrategy):
     def __init__(self):
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
-        self.client = MongoClient(constants.MONGO_URL)
-        self.db = self.client["stockdb"]            # Database name
-        self.collection = self.db["companies"]      
+        self._mongoService =  MongoClientService()  
 
     def placeOrder(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
         try:
@@ -30,7 +28,7 @@ class UpstoxStrategy(BaseStrategy):
             price =0
             orderType = "MARKET" 
             if orderparams.isinNumber is None:
-                orderparams.instrument_token = self.collection.find({ "symbol": orderparams.symbol.upper })
+                orderparams.instrument_token = self._mongoService.fetchBySymbol(orderparams)
             if orderparams.limitPrice is not None and len(orderparams.limitPrice) > 0:
                 price = float(orderparams.limitPrice[0])
                 orderType = "LIMIT"
@@ -65,11 +63,8 @@ class UpstoxStrategy(BaseStrategy):
                     ordersData =  self.__mapPlaceOrderData(orderDetails)
                     # placeOrderData.data = ordersData 
                     return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(ordersData).build()
-
                 else:
                     return orderDetails
-            # else :
-            #     errorMessage = result["errors"][0]["message"]
             return ResponseBuilder().status(constants.ERROR).statusCode(400).errorMessage(result["message"]).build()
 
 
@@ -100,52 +95,17 @@ class UpstoxStrategy(BaseStrategy):
         result = self.extract_required_headers(headers)
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
-        authorization = headers["authorization"]       
         try:
-            payload={}
-            headers = {
-                'Authorization':constants.BEARER + authorization,
-                'Accept': 'application/json'
-            }
-            response = requests.request("GET", upstoxUrl.GET_USER_HOLDINGS, headers=headers, data=payload)
+            headers = HeaderBuilder.with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER+headers["authorization"]).build()
+            response = requests.request("GET", upstoxUrl.GET_USER_HOLDINGS, headers=headers, dat={})
             jsonResponse = json.loads(response.text)
-            holdingsData = ResponseModel(
-                status = jsonResponse["status"],
-                statusCode = response.status_code,
-                data = jsonResponse["data"],
-                userIntent = None
-            )
-            print(len(holdingsData.data))
-            if jsonResponse["status"] == constants.ERROR or len(holdingsData.data) == 0 :
-                return holdingsData            
-            holdings = jsonResponse["data"]
-            totalInValue = 0
-            totalHoldingValue = 0
-            total_profit_and_loss = 0
-            for item in holdings:
-                totalInValue += item["quantity"] * item["average_price"]
-                totalHoldingValue += item["quantity"] * item["last_price"]
+            if jsonResponse["status"] == constants.ERROR:
+                return ResponseBuilder().status(constants.ERROR).statusCode(response.status_code).errorMessage(jsonResponse["errors"][0]["message"]).build()
 
-            total_profit_and_loss = totalHoldingValue - totalInValue
-            total_pnl_percentage = (
-                (total_profit_and_loss / totalInValue) * 100 if totalInValue > 0 else 0
-            )
-
-            jsonResponse["data"] = {
-                "holdings": holdings,
-                "totalholding": {
-                    "totalholdingvalue": round(totalHoldingValue, 2),
-                    "totalinvvalue": round(totalInValue, 2),
-                    "totalprofitandloss": round(total_profit_and_loss, 2),
-                    "totalpnlpercentage": round(total_pnl_percentage, 2)
-                }
-            }
-            data = JSONResponse(content=jsonResponse)
-            if navigateFrom == constants.USERPROMPT :
-                holdings.data = self.__mapHoldingsData(data)
-            else :
-                holdingsData.data = data
-            return holdingsData
+            data = []
+            if len(jsonResponse["data"]) > 0 :
+                data = self.__mapHoldingsData(jsonResponse, navigateFrom)           
+            return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
         
         except HTTPException as http_err:
             raise http_err  # Don't wrap again
@@ -257,7 +217,10 @@ class UpstoxStrategy(BaseStrategy):
                 )
                 self.cancelOrder(headers, obj, None)
         return self.getOrders(headers,constants.NUll)
-            
+
+    def marketData(self, headers:dict,exchange: str, symboltoken:str):
+        pass
+
     def __mapHoldingsData(self, holdingsData):
         holdings = []
         userHoldings = holdingsData  #["data"]["holdings"]
@@ -331,11 +294,28 @@ class UpstoxStrategy(BaseStrategy):
         result =  json.loads(response.text)
         return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(result["data"]).build()
 
-        ordersData = ResponseModel(
-            status=result["status"],
-            statusCode=response.status_code,
-            data=result["data"],
-            userIntent= None
-        )
-        return ordersData
         
+    def __mapHoldingsData(self, jsonResponse :any, navigateFrom):
+        holdings = jsonResponse["data"]
+        totalInValue = 0
+        totalHoldingValue = 0
+        total_profit_and_loss = 0
+        for item in holdings:
+            totalInValue += item["quantity"] * item["average_price"]
+            totalHoldingValue += item["quantity"] * item["last_price"]
+
+        total_profit_and_loss = totalHoldingValue - totalInValue
+        total_pnl_percentage = ((total_profit_and_loss / totalInValue) * 100 if totalInValue > 0 else 0)
+
+        jsonResponse["data"] = {
+                "holdings": holdings,
+                "totalholding": {
+                    "totalholdingvalue": round(totalHoldingValue, 2),
+                    "totalinvvalue": round(totalInValue, 2),
+                    "totalprofitandloss": round(total_profit_and_loss, 2),
+                    "totalpnlpercentage": round(total_pnl_percentage, 2)
+                }
+        }
+        data = JSONResponse(content=jsonResponse)
+        if navigateFrom == constants.USERPROMPT :
+            data = self.__mapHoldingsData(data)

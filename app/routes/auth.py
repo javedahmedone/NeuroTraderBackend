@@ -21,11 +21,11 @@ def login(
 @router.get("/callback/{broker}")
 def callback(request: Request, code: str = None):
     print("✅ Callback received with code:", code)
-    print(GetSecrets().getFrontendUrl())  # https://frontend-production.up.railway.app
+    frontendUrl = GetSecrets().getFrontendUrl()
+    print(frontendUrl)  # https://frontend-production.up.railway.app
     print(GetSecrets().getBackendUrl()) 
     brokerName=request.path_params['broker']
-    FrontendUrl = GetSecrets().getFrontendUrl()
-    react_url = f"{FrontendUrl}/callback/{brokerName}?code={code}"
+    react_url = f"{frontendUrl}/callback/{brokerName}?code={code}"
     print("Redirecting to:", react_url)
     return RedirectResponse(url=react_url)
     

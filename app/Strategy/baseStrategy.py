@@ -34,3 +34,7 @@ class BaseStrategy(ABC):
     @abstractmethod
     def portfolioAnalysis(self, headers:dict, userPrompt: str):
         pass
+
+    @abstractmethod
+    def marketData(self, headers:dict,exchange: str, symboltoken:str):
+        pass
