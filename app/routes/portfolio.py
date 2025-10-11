@@ -13,7 +13,6 @@ def fetch_holdings(
     headers = dict(request.headers)
     if headers.get("brokername") is None or headers.get("brokername") == '':
         raise HTTPException(status_code=401, detail={ "message": "failed", "status": "false", "error": "Headers are missing or brokername is empty" })        
-   
     service = BrokerService(headers["brokername"])
     return service.getHoldings(headers,constants.NUll)
 

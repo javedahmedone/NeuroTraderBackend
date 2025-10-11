@@ -1,4 +1,4 @@
-from typing import Union, Optional, List, Dict
+from typing import Any, Union, Optional, List, Dict
 from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
@@ -52,7 +52,9 @@ class SearchedStockModel(BaseModel):
 class ResponseModel(BaseModel):
     status: str
     statusCode: int
-    data: Optional[Union[Dict, List[Dict]]] = None
+    # data: Optional[Union[Dict, List[Dict]]] = None
+    data: Optional[Any] = None
+
     userIntent :str | None = None
     errorMessage : str | None = None
 

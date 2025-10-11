@@ -36,5 +36,5 @@ class BaseStrategy(ABC):
         pass
 
     @abstractmethod
-    def marketData(self, headers:dict,exchange: str, symboltoken:str):
+    def marketData(self, headers:dict,exchange: str, stockSymbol: str, token: str, isinNumber: str, interval:str):
         pass

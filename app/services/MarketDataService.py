@@ -1,19 +1,42 @@
 from typing import List
+from fastapi import Request
 from HttpClient.httpClient import HttpClient
+from Strategy.brokerFactory import BrokerFactory
 from global_constant import constants
 from models.schemas import MarketData
-import json
+from services.Common.CommonService import CommonService
 from services.Common.HeaderBuilder import HeaderBuilder
 from services.Common.ResponseBuilder import ResponseBuilder
 from services.RedisClientService import RedisClientService
 from services.stockFetchingService import StockFetchingService as stockFetchingService
-class MarketMoverService:
+import json
+from datetime import time
 
-    def __init__(self):
+
+class MarketDataService:
+
+    def __init__(self, broker_name: str = None):
         self._stockFetchingService = stockFetchingService()
         self._httpClient = HttpClient()
         self._redis = RedisClientService()
+        self.brokerFactory = None
+        if broker_name:
+            self.brokerFactory = BrokerFactory(broker_name).get_broker()
+        
+    def fetchMarketData( self, request: Request, stockSymbol: str, token: str, isinNumber: str, interval:str):
+        return self.brokerFactory.marketData(request.headers, "NSE", stockSymbol, token, isinNumber, interval)
 
+    def currentIstTime(self):
+        service = CommonService()
+        return service.currentIstTime()   
+          
+    def isMarketOpen(self):
+        ist_now = self.currentIstTime()  
+        market_start = time(9, 15)
+        market_end = time(15, 30) 
+        is_weekday = ist_now.weekday() < 5    
+        is_time = market_start <= ist_now.time() <= market_end
+        return is_weekday and is_time
 
     def fetch_nse_gainers(self):
         cachedData = self._redis.get(constants.CACHE_KEY)

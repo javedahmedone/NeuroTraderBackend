@@ -35,31 +35,18 @@ class MongoClientService:
                 self.collection.update_one({"_id": doc["_id"]}, {"$set": update_data})
 
     def bulkInsertDataFromRedis(self):
-        """
-        Iterate over Mongo documents, get matching Redis data,
-        and bulk update Mongo.
-        """
         documents = list(self.collection.find())
-
         for doc in documents:
             symbol = doc.get("symbol")
             if not symbol:
                 continue
-
-            # Fetch value from Redis (assuming Redis key is the symbol name)
             redis_data = self._redis.getHashKeyData(symbol)
-
-
             if redis_data:
-                # Example: Update MongoDB doc with values from Redis
                 update_fields = {
                     "isinNumber": redis_data.get("isinNumber"),
                     "token": redis_data.get("token"),
                 }
-
-                # Remove None values
                 update_fields = {k: v for k, v in update_fields.items() if v is not None}
-
                 if update_fields:
                     self.collection.update_one(
                         {"_id": doc["_id"]},

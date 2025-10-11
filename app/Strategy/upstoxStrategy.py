@@ -218,7 +218,7 @@ class UpstoxStrategy(BaseStrategy):
                 self.cancelOrder(headers, obj, None)
         return self.getOrders(headers,constants.NUll)
 
-    def marketData(self, headers:dict,exchange: str, symboltoken:str):
+    def marketData(self, headers:dict,exchange: str, stockSymbol: str, token: str, isinNumber: str, interval:str):
         pass
 
     def __mapHoldingsData(self, holdingsData):

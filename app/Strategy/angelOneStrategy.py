@@ -1,7 +1,10 @@
+from datetime import timedelta
 from SmartApi import SmartConnect
 from fastapi import HTTPException
 import pyotp
+import requests
 from Strategy.baseStrategy import BaseStrategy
+from services.Common.CommonService import CommonService
 from services.Common.ResponseBuilder import ResponseBuilder
 from services.geminiService import GeminiService
 from global_constant import constants
@@ -13,6 +16,8 @@ class AngelOneStrategy(BaseStrategy):
     def __init__(self):
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
+        self.service  = CommonService()
+
 
     def placeOrder(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
         try:
@@ -66,14 +71,11 @@ class AngelOneStrategy(BaseStrategy):
         return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
 
     def getHoldings(self, headers: dict, navigateFrom: str):
-        tst = self.marketData(headers,"sdf","sd")
-
         result = self.extract_required_headers(headers)
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
 
         token = headers["authorization"].replace("Bearer ", "")
-        # token = authorization.replace("Bearer ", "")
         smart_api = SmartConnect(api_key=headers["apikey"])
         smart_api.setAccessToken(token)
         try:
@@ -180,23 +182,56 @@ class AngelOneStrategy(BaseStrategy):
                 self.cancelOrder(headers, obj, None)
         return self.getOrders(headers,constants.NUll)
 
-    def marketData(self, headers:dict,exchange: str, symboltoken:str):
+    def marketData(self, headers:dict,exchange: str, stockSymbol: str, token: str, isinNumber: str, interval:str):
         result  = self.extract_required_headers(headers)
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
         
-        authorization = headers["authorization"]
-        token = authorization.replace("Bearer ", "")
+        authToken = headers["authorization"].replace("Bearer ", "")
         smart_api = SmartConnect(api_key=headers["apikey"])
-        smart_api.setAccessToken(token) 
+        smart_api.setAccessToken(token)                
+        url = "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData"
+        headers = {
+        'X-PrivateKey': headers["apikey"],
+        'Accept': 'application/json',
+        'X-SourceID':  smart_api.sourceID, 
+        'X-ClientLocalIP': smart_api.clientLocalIp,
+        'X-ClientPublicIP':  smart_api.clientPublicIP,
+        'X-MACAddress': smart_api.clientMacAddress,
+        #   'X-UserType': 'USER',
+        'Authorization': headers["authorization"],
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+        }
+        todayDate = self.service.currentIstTime().strftime("%Y-%m-%d")
+        if(interval == constants.ONEWEEK):
+            intervalTime = "FIVE_MINUTE"
+        elif(interval == constants.ONEMONTH):
+            intervalTime = "THIRTY_MINUTE"
+        else:
+            intervalTime = "ONE_MINUTE"
+        fromDate = self.service.fetchFromDate(todayDate,interval) 
         payload = {
             "exchange": "NSE",
-            "symboltoken": "3045",
-            "interval": "TEN_MINUTE",
-            "fromdate": "2025-09-26 10:00",
-            "todate": "2025-09-27 11:00"
+            "symboltoken": token,
+            "interval": intervalTime,
+            "fromdate": fromDate,
+            "todate": todayDate + " 15:30"
         }
-        result = smart_api.getCandleData(payload)         
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == False or result.get("success") is False:
+                statusCode = 400
+                message = result.get("message")
+                if message == "Invalid Token":
+                    statusCode = 401
+                return ResponseBuilder().status(constants.ERROR).statusCode(statusCode).errorMessage(result["message"]).build()
+            print(result.get("data"))
+            return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(result.get("data")).build()
+        else:
+            print(f"Error: status code = {response.status_code}")
+            print(response.text)     
     
     def __mapHoldingsData(self, holdingsData):
         holdings = []
