@@ -43,6 +43,14 @@ INTENT_KEYWORDS = {
         "cancel all", "cancel all orders", "delete all orders", "remove all orders",
         "cancel everything", "cancel all my orders", "abort all orders",
         "revoke all orders", "clear all orders"
+    ],
+     "stock_suggestions": [
+        "suggest me stocks", "recommend stocks", "which stocks to buy",
+        "which stock should i buy", "good stocks to buy", "best stock to invest in",
+        "what should i buy", "stock recommendation", "give me stock ideas",
+        "suggest me shares", "tell me stocks to buy", "which shares are good to buy",
+        "should i sell my stocks", "should i hold or sell", "should i buy or sell",
+        "stock advice", "buy or sell suggestion", "buy/sell recommendation"
     ]
 }
 
@@ -58,10 +66,10 @@ class GeminiService:
         {json_data}
 
         {userPrompt}
-        give me answer in 500 words
+        give me answer in 300 words
         """
         response = self.client.models.generate_content(
-            model="gemini-1.5-flash", contents=prompt
+            model="gemini-2.5-flash", contents=prompt
         )
         return response.text
 

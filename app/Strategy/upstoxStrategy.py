@@ -1,15 +1,17 @@
-from fastapi import HTTPException
-from fastapi.responses import JSONResponse
-from Strategy.baseStrategy import BaseStrategy
+
 from services.Common.MongoClientService import MongoClientService
 from services.Common.HeaderBuilder import HeaderBuilder
 from services.Common.GetSecrets import GetSecrets
 from services.Common.ResponseBuilder import ResponseBuilder
+from services.Common.httpClient import HttpClient
 from services.geminiService import GeminiService
 from global_constant import constants
 from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, ResponseModel, StockOrderRequest, UserPromptRequest
 from services.stockFetchingService import StockFetchingService
 from global_constant.BrokerUrl import upstoxUrl
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+from Strategy.baseStrategy import BaseStrategy
 import requests
 import json
 
@@ -18,6 +20,7 @@ class UpstoxStrategy(BaseStrategy):
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
         self._mongoService =  MongoClientService()  
+        self._httpClient = HttpClient()
 
     def placeOrder(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
         try:
@@ -96,8 +99,11 @@ class UpstoxStrategy(BaseStrategy):
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
         try:
-            headers = HeaderBuilder.with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER+headers["authorization"]).build()
-            response = requests.request("GET", upstoxUrl.GET_USER_HOLDINGS, headers=headers, dat={})
+            header_builder = HeaderBuilder()
+            headers = header_builder.with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER + headers["authorization"]).build()
+            # headers = HeaderBuilder.with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER+headers["authorization"]).build()
+            # response = requests.request("GET", upstoxUrl.GET_USER_HOLDINGS, headers=headers, dat={})
+            response = self._httpClient.get(upstoxUrl.GET_USER_HOLDINGS, headers=headers)
             jsonResponse = json.loads(response.text)
             if jsonResponse["status"] == constants.ERROR:
                 return ResponseBuilder().status(constants.ERROR).statusCode(response.status_code).errorMessage(jsonResponse["errors"][0]["message"]).build()

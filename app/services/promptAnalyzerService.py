@@ -82,10 +82,9 @@ class PromptAnalyzerService():
 
         elif userIntent == constants.ANALYZE_PORTFOLIO_PROMPT:
             response_data = brokerFactory.portfolioAnalysis(headers, prompt)
-            response = {
-                "userIntent": constants.ANALYZE_PORTFOLIO,
-                "data": response_data
-            }
+            response_data.userIntent = constants.ANALYZE_PORTFOLIO
+            return response_data
+
         elif userIntent == constants.CANCEL_ORDER_PROMPT:
             response_data = brokerFactory.cancelOrder(headers, data, constants.NUll)
             response_data.userIntent = constants.CANCELORDER

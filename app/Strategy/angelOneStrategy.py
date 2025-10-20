@@ -1,15 +1,15 @@
-from datetime import timedelta
 from SmartApi import SmartConnect
 from fastapi import HTTPException
-import pyotp
-import requests
 from Strategy.baseStrategy import BaseStrategy
+from global_constant.BrokerUrl import AngelOneUrl
 from services.Common.CommonService import CommonService
+from services.Common.httpClient import HttpClient
 from services.Common.ResponseBuilder import ResponseBuilder
 from services.geminiService import GeminiService
 from global_constant import constants
 from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, StockOrderRequest, UserPromptRequest
 from services.stockFetchingService import StockFetchingService
+import pyotp
 
 
 class AngelOneStrategy(BaseStrategy):
@@ -17,7 +17,7 @@ class AngelOneStrategy(BaseStrategy):
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
         self.service  = CommonService()
-
+        self._httpClient = HttpClient()
 
     def placeOrder(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
         try:
@@ -80,7 +80,7 @@ class AngelOneStrategy(BaseStrategy):
         smart_api.setAccessToken(token)
         try:
             holdingsData = smart_api.allholding()  
-            if  holdingsData["errorcode"] != '':
+            if  holdingsData.get("errorcode") != '':
                 return ResponseBuilder().status(constants.ERROR).statusCode(401).build()
 
             print(holdingsData)          
@@ -138,8 +138,11 @@ class AngelOneStrategy(BaseStrategy):
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
         userHoldings = self.getHoldings(headers, constants.NUll)
         print(userHoldings)
-        data = self.geminiService.processUserRequest(userHoldings, userPrompt)
-        return data
+        if  userHoldings.status != constants.SUCCESS:
+                return ResponseBuilder().status(constants.ERROR).statusCode(userHoldings.statusCode).errorMessage(userHoldings["message"]).build()
+        if userHoldings.data is not None:
+            data = self.geminiService.processUserRequest(userHoldings.data, userPrompt)
+        return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(data).build()
     
     def cancelOrder(self, headers:dict, data: UserPromptRequest, userPrompt: str):
         result  = self.extract_required_headers(headers)
@@ -187,10 +190,8 @@ class AngelOneStrategy(BaseStrategy):
         if result is False:
             raise ValueError("Missing required headers: apikey, clientcode, authorization, refresh")
         
-        authToken = headers["authorization"].replace("Bearer ", "")
         smart_api = SmartConnect(api_key=headers["apikey"])
         smart_api.setAccessToken(token)                
-        url = "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData"
         headers = {
         'X-PrivateKey': headers["apikey"],
         'Accept': 'application/json',
@@ -218,7 +219,7 @@ class AngelOneStrategy(BaseStrategy):
             "fromdate": fromDate,
             "todate": todayDate + " 15:30"
         }
-        response = requests.post(url, headers=headers, json=payload)
+        response = self._httpClient.post(AngelOneUrl.stockChartData, headers, payload)
         if response.status_code == 200:
             result = response.json()
             if result.get("status") == False or result.get("success") is False:
@@ -233,6 +234,11 @@ class AngelOneStrategy(BaseStrategy):
             print(f"Error: status code = {response.status_code}")
             print(response.text)     
     
+    def stockData(self, stockSymbol: str):
+        smart_api = SmartConnect(api_key=headers["apikey"])
+        smart_api.setAccessToken(token)   
+        return ResponseBuilder().status(constants.SUCCESS).statusCode(200).data(obj).build()
+
     def __mapHoldingsData(self, holdingsData):
         holdings = []
         userHoldings = holdingsData["data"]["holdings"]

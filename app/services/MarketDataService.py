@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import Request
-from HttpClient.httpClient import HttpClient
+from services.Common.httpClient import HttpClient
 from Strategy.brokerFactory import BrokerFactory
 from global_constant import constants
 from models.schemas import MarketData

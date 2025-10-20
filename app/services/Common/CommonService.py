@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
+from global_constant import constants
 import pytz
 
-from global_constant import constants
 class CommonService:
     def __init(self):
         pass
@@ -11,6 +11,9 @@ class CommonService:
         
     def fetchFromDate(self, todayDate:datetime, interval: str):
         todayDate = datetime.strptime(todayDate, "%Y-%m-%d")
+        day_of_week = todayDate.strftime("%A")
+        if day_of_week == "Saturday" or day_of_week == "Sunday":
+            todayDate -= timedelta(days=day_of_week == "Saturday" and 1 or 2)
         if interval == constants.ONEWEEK:
             result = todayDate - timedelta(days=7)
         elif interval == constants.ONEMONTH:
@@ -26,6 +29,7 @@ class CommonService:
         else:
             result = todayDate
         return result.strftime("%Y-%m-%d") + " 09:15"    
+    
     def intervalTimeMapping(self, interval: str):
         if interval == constants.ONEWEEK:
             return "ONE_WEEK"
