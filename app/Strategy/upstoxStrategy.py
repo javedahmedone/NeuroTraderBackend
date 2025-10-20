@@ -101,8 +101,6 @@ class UpstoxStrategy(BaseStrategy):
         try:
             header_builder = HeaderBuilder()
             headers = header_builder.with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER + headers["authorization"]).build()
-            # headers = HeaderBuilder.with_content_type(constants.CONTENT_APPLICATION_JSON).with_auth(constants.BEARER+headers["authorization"]).build()
-            # response = requests.request("GET", upstoxUrl.GET_USER_HOLDINGS, headers=headers, dat={})
             response = self._httpClient.get(upstoxUrl.GET_USER_HOLDINGS, headers=headers)
             jsonResponse = json.loads(response.text)
             if jsonResponse["status"] == constants.ERROR:
