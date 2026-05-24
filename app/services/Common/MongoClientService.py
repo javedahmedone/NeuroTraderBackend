@@ -1,7 +1,7 @@
-from global_constant import constants
-from config import config
+from app.global_constant import constants
+from app.config import config
 from pymongo import MongoClient
-from services.RedisClientService import RedisClientService
+from app.services.RedisClientService import RedisClientService
 
 class MongoClientService:   
     def __init__(self):

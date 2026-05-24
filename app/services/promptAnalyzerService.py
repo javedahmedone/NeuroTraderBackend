@@ -1,10 +1,15 @@
-from Strategy.brokerFactory import BrokerFactory
-from models.schemas import UserPromptRequest
-from services.Common.ResponseBuilder import ResponseBuilder
-from services.geminiService import GeminiService
-from global_constant import constants, errorMessageConstants
-from services.intentDetectionService import IntentDetectionService
-from services.stockFetchingService import StockFetchingService
+from app.strategy.brokerFactory import BrokerFactory
+from app.models.schemas import (
+    UserPromptRequest
+)
+from app.services.Common.ResponseBuilder import ResponseBuilder
+from app.services.geminiService import GeminiService
+from app.services.intentDetectionService import IntentDetectionService
+from app.services.stockFetchingService import StockFetchingService
+from app.global_constant import (
+    constants,
+    errorMessageConstants
+)
 
 class PromptAnalyzerService():
     def __init__(self, intent_service: IntentDetectionService, stock_fetching_service: StockFetchingService , gemini_service: GeminiService):

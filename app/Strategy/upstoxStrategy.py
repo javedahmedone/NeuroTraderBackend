@@ -1,19 +1,27 @@
-from config import config
-from logging_config import get_logger
+from app.config import config
+from app.logging_config import get_logger
 import requests
+import json
 from typing import Dict, Optional
-from services.Common.MongoClientService import MongoClientService
-from services.Common.HeaderBuilder import HeaderBuilder
-from services.Common.ResponseBuilder import ResponseBuilder
-from services.Common.httpClient import HttpClient
-from services.geminiService import GeminiService
-from global_constant import constants
-from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, ResponseModel, StockOrderRequest, UserPromptRequest
-from services.stockFetchingService import StockFetchingService
-from global_constant.BrokerUrl import upstoxUrl
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from Strategy.baseStrategy import BaseStrategy
+from app.services.Common.MongoClientService import MongoClientService
+from app.services.Common.HeaderBuilder import HeaderBuilder
+from app.services.Common.ResponseBuilder import ResponseBuilder
+from app.services.Common.httpClient import HttpClient
+from app.services.geminiService import GeminiService
+from app.services.stockFetchingService import StockFetchingService
+from app.global_constant import constants
+from app.global_constant.BrokerUrl import upstoxUrl
+from app.models.schemas import (
+    CancelOrderRequest,
+    LoginRequest,
+    LoginResponse,
+    ResponseModel,
+    StockOrderRequest,
+    UserPromptRequest
+)
+from app.strategy.baseStrategy import BaseStrategy
 import json
 
 logger = get_logger(__name__)

@@ -1,4 +1,4 @@
-from models.schemas import ResponseModel
+from app.models.schemas import ResponseModel
 class ResponseBuilder:
     def __init__(self):
         self._status = None

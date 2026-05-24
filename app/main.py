@@ -1,36 +1,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import Response
 
 from dotenv import load_dotenv
-
 from prometheus_client import generate_latest
 
 import sys
 
-# ==========================================================
-# LOCAL IMPORTS
-# ==========================================================
+from app.config import config
 
-from config import config
-
-from logging_config import (
+from app.logging_config import (
     configure_logging,
     get_logger
 )
 
-from middleware.correlation import (
+from app.middleware.correlation import (
     CorrelationMiddleware,
     get_correlation_context
 )
 
-from observability.otel_setup import (
+from app.observability.otel_setup import (
     init_observability
 )
 
-from observability.metrics import registry
+from app.observability.metrics import registry
 
-from routes import (
+from app.routes import (
     auth,
     marketData,
     portfolio,
@@ -180,16 +175,27 @@ async def metrics():
     )
 
 # ==========================================================
-# ROOT ENDPOINT
+# READY ENDPOINT
 # ==========================================================
 
 @app.get("/ready")
-async def root():
+async def ready():
 
     return {
         "service": "NeuroTrader Backend",
         "status": "running",
         "environment": config.ENV
+    }
+
+# ==========================================================
+# ROOT ENDPOINT
+# ==========================================================
+
+@app.get("/")
+async def root():
+
+    return {
+        "message": "NeuroTrader Backend Running"
     }
 
 # ==========================================================
@@ -224,7 +230,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "main:app",
+        "app.main:app",
         host=config.HOST,
         port=config.PORT,
         reload=True,

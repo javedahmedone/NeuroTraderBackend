@@ -1,15 +1,21 @@
 from SmartApi import SmartConnect
-from fastapi import HTTPException
-from Strategy.baseStrategy import BaseStrategy
-from global_constant.BrokerUrl import AngelOneUrl
-from services.Common.CommonService import CommonService
-from services.Common.httpClient import HttpClient
-from services.Common.ResponseBuilder import ResponseBuilder
-from services.geminiService import GeminiService
-from global_constant import constants
-from models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, StockOrderRequest, UserPromptRequest
-from services.stockFetchingService import StockFetchingService
 import pyotp
+from fastapi import HTTPException
+from app.strategy.baseStrategy import BaseStrategy
+from app.global_constant.BrokerUrl import AngelOneUrl
+from app.global_constant import constants
+from app.services.Common.CommonService import CommonService
+from app.services.Common.httpClient import HttpClient
+from app.services.Common.ResponseBuilder import ResponseBuilder
+from app.services.geminiService import GeminiService
+from app.services.stockFetchingService import StockFetchingService
+from app.models.schemas import (
+    CancelOrderRequest,
+    LoginRequest,
+    LoginResponse,
+    StockOrderRequest,
+    UserPromptRequest
+)
 
 
 class AngelOneStrategy(BaseStrategy):

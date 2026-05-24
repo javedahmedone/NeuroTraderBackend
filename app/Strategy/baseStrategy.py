@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from fastapi import Request
-from models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest, UserPromptRequest
+from app.models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest, UserPromptRequest
 
 class BaseStrategy(ABC):
     @abstractmethod

@@ -1,11 +1,10 @@
 from pymongo import MongoClient
 from rapidfuzz import process
 from typing import Optional, List
-from global_constant import constants
-from models.schemas import SearchStockModel, StockOrderRequest
-from config import config
+from app.global_constant import constants
+from app.models.schemas import SearchStockModel, StockOrderRequest
 import redis
-from config import config
+from app.config import config
 from pymongo import MongoClient
 
 class StockFetchingService:

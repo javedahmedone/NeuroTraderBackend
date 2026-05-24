@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from services.MarketDataService import MarketDataService
+from app.services.MarketDataService import MarketDataService
 router = APIRouter()
 
 @router.get("/marketMovers")

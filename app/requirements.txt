@@ -13,6 +13,7 @@ pymongo[srv]
 upstox-python-sdk
 pytz
 motor
+setuptools
 
 # ====== OBSERVABILITY ======
 # Logging

@@ -3,10 +3,10 @@ import requests
 import ijson
 import csv
 import os
-from config import config
+from app.config import config
 from pymongo import MongoClient
-from config import config
-from global_constant import constants
+from app.config import config
+from app.global_constant import constants
 import json
 from typing import Any
 import redis

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from models.schemas import LoginRequest
-from services.brokerService import BrokerService
-from config import config
-from logging_config import get_logger
+from app.models.schemas import LoginRequest
+from app.services.brokerService import BrokerService
+from app.config import config
+from app.logging_config import get_logger
 
 # Initialize logger
 logger = get_logger(__name__)

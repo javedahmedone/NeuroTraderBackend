@@ -1,8 +1,3 @@
-"""
-Centralized Configuration Management for NeuroTrader Backend
-All configuration loaded from environment variables with validation
-"""
-
 import os
 from typing import Optional, Dict, List
 from dotenv import load_dotenv

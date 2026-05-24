@@ -1,6 +1,6 @@
 from google import genai
 import json
-from global_constant import constants
+from app.global_constant import constants
 import re
 
 INTENT_KEYWORDS = {

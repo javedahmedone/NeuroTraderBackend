@@ -5,7 +5,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable
-from logging_config import (
+from app.logging_config import (
     correlation_id_var, trace_id_var, span_id_var, user_id_var, request_id_var
 )
 

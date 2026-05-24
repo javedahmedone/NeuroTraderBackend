@@ -1,8 +1,8 @@
 
-from config import config
-from logging_config import get_logger
-from Strategy.upstoxStrategy import UpstoxStrategy
-from Strategy.angelOneStrategy import AngelOneStrategy  # If you have this
+from app.config import config
+from app.logging_config import get_logger
+from app.strategy.upstoxStrategy import UpstoxStrategy
+from app.strategy.angelOneStrategy import AngelOneStrategy  # If you have this
 from typing import Optional
 
 logger = get_logger(__name__)

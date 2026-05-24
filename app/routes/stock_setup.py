@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from services.Common.MongoClientService import MongoClientService
-from services.stockFetchingService import StockFetchingService
-from services.RedisClientService import RedisClientService
+from app.services.Common.MongoClientService import MongoClientService
+from app.services.stockFetchingService import StockFetchingService
+from app.services.RedisClientService import RedisClientService
 
 
 router = APIRouter()
