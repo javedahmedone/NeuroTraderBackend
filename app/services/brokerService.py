@@ -4,8 +4,8 @@ from models.schemas import CancelOrderRequest, LoginRequest, StockOrderRequest
 
 class BrokerService:
 
-    def __init__(self):
-        pass
+    # def __init__(self):
+    #     pass
                                 
     def __init__(self, broker_name: str):
         self.brokerFactory = BrokerFactory(broker_name).get_broker()

@@ -4,6 +4,10 @@
 .env.*.local
 .env.prod
 
+# ====== LOGS ======
+logs/
+*.log
+
 # ====== VIRTUAL ENVIRONMENT ======
 .venv/
 venv/
@@ -43,7 +47,6 @@ wheels/
 # ====== OS ======
 .DS_Store
 Thumbs.db
-*.log
 
 # ====== DOCKER ======
 .dockerignore
@@ -53,3 +56,9 @@ Thumbs.db
 .mypy_cache/
 .coverage
 htmlcov/
+
+# ====== OBSERVABILITY DATA ======
+prometheus_data/
+loki_data/
+grafana_data/
+alertmanager_data/

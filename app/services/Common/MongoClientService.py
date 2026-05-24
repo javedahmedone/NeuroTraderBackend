@@ -1,11 +1,12 @@
 from global_constant import constants
+from config import config
 from pymongo import MongoClient
 from services.RedisClientService import RedisClientService
 
 class MongoClientService:   
     def __init__(self):
-        self.client = MongoClient(constants.MONGO_URL)
-        self.db = self.client["stockdb"]            # Database name
+        self.client = MongoClient(config.MONGO_URL)
+        self.db = self.client[config.MONGO_DB_NAME]            # Database name
         self.collection = self.db["companies"]  
         self._redis = RedisClientService()
     

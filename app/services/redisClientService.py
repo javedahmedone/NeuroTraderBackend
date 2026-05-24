@@ -1,22 +1,23 @@
 from pydantic import BaseModel
 import requests
 import ijson
-import redis
 import csv
 import os
+from config import config
 from pymongo import MongoClient
-from config import REDIS_URL
+from config import config
 from global_constant import constants
 import json
 from typing import Any
+import redis
 
 class RedisClientService:   
     def __init__(self):
         base_path = os.getcwd()  
         self.csv_path = os.path.join(base_path,  "Files", "EQUITY_L.csv")
-        self.client = MongoClient(constants.MONGO_URL)
-        self.r = redis.Redis.from_url(REDIS_URL)
-        self.db = self.client["stockdb"]            # Database name
+        self.client = MongoClient(config.MONGO_URL)
+        self.r =redis.from_url(config.REDIS_URL,decode_responses=config.REDIS_DECODE_RESPONSES,socket_connect_timeout=config.REDIS_SOCKET_CONNECT_TIMEOUT)
+        self.db = self.client[config.MONGO_DB_NAME]            # Database name
         self.collection = self.db["companies"]      # Collection name
         self.json_url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
 

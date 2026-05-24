@@ -1,7 +1,9 @@
-
+from config import config
+from logging_config import get_logger
+import requests
+from typing import Dict, Optional
 from services.Common.MongoClientService import MongoClientService
 from services.Common.HeaderBuilder import HeaderBuilder
-from services.Common.GetSecrets import GetSecrets
 from services.Common.ResponseBuilder import ResponseBuilder
 from services.Common.httpClient import HttpClient
 from services.geminiService import GeminiService
@@ -12,15 +14,135 @@ from global_constant.BrokerUrl import upstoxUrl
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from Strategy.baseStrategy import BaseStrategy
-import requests
 import json
 
+logger = get_logger(__name__)
+
 class UpstoxStrategy(BaseStrategy):
+    """Upstox broker trading strategy"""
+    
     def __init__(self):
+        """Initialize Upstox strategy"""
+        self.api_key = config.UPSTOX_API_KEY
+        self.redirect_uri = config.UPSTOX_REDIRECT_URI
+        self.backend_url = config.BACKEND_URL
+        self.frontend_url = config.FRONTEND_URL
+        
+        logger.info("✅ UpstoxStrategy initialized", extra={
+            "redirect_uri": self.redirect_uri,
+            "backend_url": self.backend_url
+        })
+        
         self.stockFetchService = StockFetchingService()
         self.geminiService =  GeminiService()
         self._mongoService =  MongoClientService()  
         self._httpClient = HttpClient()
+
+    def get_login_url(self) -> str:
+        """
+        Generate Upstox login URL
+        
+        Returns:
+            str: OAuth login URL
+        """
+        try:
+            if not self.api_key:
+                raise ValueError("UPSTOX_API_KEY not configured")
+            
+            login_url = f"https://api.upstox.com/index/dialog/authorize?apikey={self.api_key}&redirect_uri={self.redirect_uri}"
+            
+            logger.info("✅ Generated Upstox login URL", extra={
+                "url": login_url[:50] + "..."
+            })
+            
+            return login_url
+            
+        except Exception as e:
+            logger.error("❌ Error generating login URL", extra={
+                "error": str(e)
+            }, exc_info=True)
+            raise
+    
+    def exchange_code_for_token(self, code: str) -> Dict:
+        """
+        Exchange authorization code for access token
+        
+        Args:
+            code: Authorization code from Upstox
+            
+        Returns:
+            Dict: Token response
+        """
+        try:
+            if not code:
+                raise ValueError("Authorization code is required")
+            
+            # Exchange code for token
+            token_url = "https://api.upstox.com/login/process/token"
+            
+            payload = {
+                "code": code,
+                "client_id": self.api_key,
+                "client_secret": self.api_secret,
+                "redirect_uri": self.redirect_uri,
+                "grant_type": "authorization_code"
+            }
+            
+            logger.info("Exchanging authorization code for token", extra={
+                "code": code[:10] + "..."
+            })
+            
+            response = requests.post(token_url, data=payload)
+            response.raise_for_status()
+            
+            token_data = response.json()
+            
+            logger.info("✅ Token exchange successful", extra={
+                "access_token": token_data.get("access_token", "")[:20] + "..."
+            })
+            
+            return token_data
+            
+        except Exception as e:
+            logger.error("❌ Error exchanging code for token", extra={
+                "error": str(e)
+            }, exc_info=True)
+            raise
+    
+    def get_user_profile(self, access_token: str) -> Dict:
+        """
+        Get user profile from Upstox
+        
+        Args:
+            access_token: OAuth access token
+            
+        Returns:
+            Dict: User profile data
+        """
+        try:
+            profile_url = "https://api.upstox.com/user/profile"
+            
+            headers = {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {access_token}"
+            }
+            
+            response = requests.get(profile_url, headers=headers)
+            response.raise_for_status()
+            
+            profile = response.json()
+            
+            logger.info("✅ Retrieved user profile", extra={
+                "user_id": profile.get("user_id", "unknown")
+            })
+            
+            return profile
+            
+        except Exception as e:
+            logger.error("❌ Error retrieving user profile", extra={
+                "error": str(e)
+            }, exc_info=True)
+            raise
 
     def placeOrder(self, headers: dict, orderparams: StockOrderRequest, transactionType: str):
         try:
@@ -137,7 +259,7 @@ class UpstoxStrategy(BaseStrategy):
         return profileData
     
     def login(self, data: LoginRequest): # -> LoginResponse:
-        BackendUrl = GetSecrets().getBackendUrl()
+        BackendUrl = config.BACKEND_URL
 
         payload = {
             'code': data.code,

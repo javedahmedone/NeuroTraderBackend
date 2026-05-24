@@ -1,18 +1,20 @@
 from pymongo import MongoClient
-import redis
 from rapidfuzz import process
 from typing import Optional, List
-from config import REDIS_URL
 from global_constant import constants
 from models.schemas import SearchStockModel, StockOrderRequest
+from config import config
+import redis
+from config import config
+from pymongo import MongoClient
 
 class StockFetchingService:
     def __init__(self):  
-        self.redis = redis.Redis.from_url(REDIS_URL)
-        self.client = MongoClient(constants.MONGO_URL)
+        self.redis = redis.from_url(config.REDIS_URL,decode_responses=config.REDIS_DECODE_RESPONSES,socket_connect_timeout=config.REDIS_SOCKET_CONNECT_TIMEOUT)
+        self.client = MongoClient(config.MONGO_URL)
 
         # self.client  = MongoClient(uri, tlsCAFile=certifi.where())
-        self.db = self.client["stockdb"]            # Database name
+        self.db = self.client[config.MONGO_DB_NAME]            # Database name
         self.collection = self.db["companies"] 
 
     # ✅ Fetch a stock by Redis key

@@ -52,7 +52,6 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:5000")
 CACHE_TTL = os.getenv("CACHE_TTL", "43200")
 
 # Broker API Keys
-UPSTOX_API_KEY = os.getenv("UPSTOX_API_KEY", "")
 ANGEL_API_KEY = os.getenv("ANGEL_API_KEY", "")
 
 # App Settings

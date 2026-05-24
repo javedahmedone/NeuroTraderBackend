@@ -1,0 +1,112 @@
+groups:
+  - name: 'neurotrader-alerts'
+    interval: 30s
+    rules:
+      # ====== APPLICATION ERRORS ======
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(http_requests_errors_total[5m])) by (endpoint)) / 
+          (sum(rate(http_requests_total[5m])) by (endpoint)) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.endpoint }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.endpoint }}"
+
+      # ====== SLOW REQUESTS ======
+      - alert: SlowRequests
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow requests detected on {{ $labels.endpoint }}"
+          description: "P95 latency is {{ $value }}s on {{ $labels.endpoint }}"
+
+      # ====== TRADE EXECUTION FAILURES ======
+      - alert: TradeExecutionFailure
+        expr: |
+          rate(trades_placed_total{status="error"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trade execution failures detected"
+          description: "Trade failure rate: {{ $value }}/min"
+
+      # ====== BROKER API ERRORS ======
+      - alert: BrokerAPIError
+        expr: |
+          rate(broker_api_calls_total{status="error"}[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Broker API {{ $labels.broker }} is failing"
+          description: "Error rate: {{ $value }}/min on {{ $labels.endpoint }}"
+
+      # ====== QUEUE BACKLOG ======
+      - alert: QueueBacklog
+        expr: redis_queue_depth > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High queue backlog in {{ $labels.queue_name }}"
+          description: "Queue depth: {{ $value }} messages"
+
+      # ====== DLQ SPIKE ======
+      - alert: DLQSpike
+        expr: |
+          rate(dlq_message_count[1m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dead Letter Queue spike detected"
+          description: "DLQ rate: {{ $value }}/min in {{ $labels.queue_name }}"
+
+      # ====== CACHE HIT RATE ======
+      - alert: LowCacheHitRate
+        expr: |
+          (sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))) < 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate: {{ $value | humanizePercentage }}"
+
+      # ====== MONGODB SLOW QUERIES ======
+      - alert: MongoDBSlowQueries
+        expr: |
+          histogram_quantile(0.95, rate(mongodb_query_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB slow queries on {{ $labels.collection }}"
+          description: "P95 latency: {{ $value }}s"
+
+      # ====== SERVICE DOWN ======
+      - alert: ServiceDown
+        expr: up{job="neurotrader-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NeuroTrader Backend is down"
+          description: "Service is not responding to health checks"
+
+      # ====== GEMINI API ERRORS ======
+      - alert: GeminiAPIError
+        expr: |
+          rate(gemini_api_calls_total{status="error"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Gemini API errors detected"
+          description: "Error rate: {{ $value }}/min"
