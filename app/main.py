@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 from routes import auth, marketData, portfolio, promtAnalyzer, stock_setup
 
@@ -14,11 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-    
-print("main py")
+print("main.py loaded")
 app.include_router(auth.router, prefix="/auth")
 app.include_router(portfolio.router, prefix="/portfolio")
 app.include_router(promtAnalyzer.router, prefix="/promtAnalyzer")
 app.include_router(stock_setup.router, prefix="/stock")
 app.include_router(marketData.router, prefix="/marketData")
-

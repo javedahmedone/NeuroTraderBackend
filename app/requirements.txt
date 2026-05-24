@@ -11,6 +11,8 @@ ijson
 google-genai
 pymongo[srv]
 upstox-python-sdk
+pytz
+
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 # status:"success"
