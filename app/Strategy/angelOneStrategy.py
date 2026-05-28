@@ -2,8 +2,8 @@ from SmartApi import SmartConnect
 import pyotp
 from fastapi import HTTPException
 from app.strategy.baseStrategy import BaseStrategy
-from app.global_constant.BrokerUrl import AngelOneUrl
-from app.global_constant import constants
+from app.globalConstant.BrokerUrl import AngelOneUrl
+from app.globalConstant import constants
 from app.services.Common.CommonService import CommonService
 from app.services.Common.httpClient import HttpClient
 from app.services.Common.ResponseBuilder import ResponseBuilder

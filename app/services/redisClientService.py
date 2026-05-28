@@ -5,8 +5,7 @@ import csv
 import os
 from app.config import config
 from pymongo import MongoClient
-from app.config import config
-from app.global_constant import constants
+from app.globalConstant import constants
 import json
 from typing import Any
 import redis
@@ -14,14 +13,18 @@ import redis
 class RedisClientService:   
     def __init__(self):
         base_path = os.getcwd()  
-        self.csv_path = os.path.join(base_path,  "Files", "EQUITY_L.csv")
+        # ✅ FIX: Use proper path joining
+        self.csv_path = os.path.join(base_path, "app", "Files", "EQUITY_L.csv")
         self.client = MongoClient(config.MONGO_URL)
-        self.r =redis.from_url(config.REDIS_URL,decode_responses=config.REDIS_DECODE_RESPONSES,socket_connect_timeout=config.REDIS_SOCKET_CONNECT_TIMEOUT)
-        self.db = self.client[config.MONGO_DB_NAME]            # Database name
-        self.collection = self.db["companies"]      # Collection name
+        self.r = redis.from_url(
+            config.REDIS_URL,
+            decode_responses=config.REDIS_DECODE_RESPONSES,
+            socket_connect_timeout=config.REDIS_SOCKET_CONNECT_TIMEOUT
+        )
+        self.db = self.client[config.MONGO_DB_NAME]
+        self.collection = self.db["companies"]
         self.json_url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
 
-        # ✅ Ensure CSV exists
         if not os.path.exists(self.csv_path):
             raise FileNotFoundError(f"CSV file not found at: {self.csv_path}")
 
@@ -49,7 +52,6 @@ class RedisClientService:
             token = str(obj.get("token", "")).strip()
             # isin =  obj.get("ISIN NUMBER")
             symbol in symbol_to_name
-            # ✅ Filter valid NSE equity (BE/EQ segment)
             if  curr_name in symbol_to_name and exch_seg == "NSE" and symbol.endswith("-EQ") and name and token:
                 name = symbol_to_name[curr_name]
                 isinNumber =  symbol_to_isin[curr_name]

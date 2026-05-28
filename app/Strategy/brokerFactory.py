@@ -3,57 +3,20 @@ from app.config import config
 from app.logging_config import get_logger
 from app.strategy.upstoxStrategy import UpstoxStrategy
 from app.strategy.angelOneStrategy import AngelOneStrategy  # If you have this
+from app.strategy.baseStrategy import BaseStrategy
 from typing import Optional
+from app.globalConstant import brokerConstants
 
 logger = get_logger(__name__)
 
-
 class BrokerFactory:
-    """Factory for creating broker strategy instances"""
-    
-    _strategies = {
-        "upstox": UpstoxStrategy,
-        "angel": AngelOneStrategy,  # Add other brokers as needed
-    }
-    
-    @classmethod
-    def create_strategy(cls, broker_name: str):
-        """
-        Create broker strategy instance
-        
-        Args:
-            broker_name: Name of the broker (upstox, angel, etc.)
-            
-        Returns:
-            Strategy instance
-            
-        Raises:
-            ValueError: If broker not supported
-        """
-        try:
-            broker_name_lower = broker_name.lower()
-            
-            if broker_name_lower not in cls._strategies:
-                raise ValueError(f"Unsupported broker: {broker_name}")
-            
-            strategy_class = cls._strategies[broker_name_lower]
-            strategy = strategy_class()
-            
-            logger.info("✅ Broker strategy created", extra={
-                "broker": broker_name_lower,
-                "strategy": strategy_class.__name__
-            })
-            
-            return strategy
-            
-        except Exception as e:
-            logger.error("❌ Error creating broker strategy", extra={
-                "broker": broker_name,
-                "error": str(e)
-            }, exc_info=True)
-            raise
-    
-    @classmethod
-    def get_supported_brokers(cls):
-        """Get list of supported brokers"""
-        return list(cls._strategies.keys())
+    def __init__(self, strategy_type: str):
+        self.strategy_type = strategy_type.lower()
+
+    def get_broker(self) -> BaseStrategy:
+        if self.strategy_type == brokerConstants.AngelOne:
+            return AngelOneStrategy()
+        elif self.strategy_type == brokerConstants.Upstox:
+            return UpstoxStrategy()
+        else:
+            raise ValueError(f"Unknown strategy type: {self.strategy_type}")

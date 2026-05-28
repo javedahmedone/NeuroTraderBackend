@@ -19,9 +19,9 @@ from app.middleware.correlation import (
     get_correlation_context
 )
 
-from app.observability.otel_setup import (
-    init_observability
-)
+# from app.observability.otel_setup import (
+#     init_observability
+# )
 
 from app.observability.metrics import registry
 

@@ -6,7 +6,7 @@ from app.services.Common.ResponseBuilder import ResponseBuilder
 from app.services.geminiService import GeminiService
 from app.services.intentDetectionService import IntentDetectionService
 from app.services.stockFetchingService import StockFetchingService
-from app.global_constant import (
+from app.globalConstant import (
     constants,
     errorMessageConstants
 )

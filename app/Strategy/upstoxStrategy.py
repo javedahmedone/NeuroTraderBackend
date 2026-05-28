@@ -2,26 +2,20 @@ from app.config import config
 from app.logging_config import get_logger
 import requests
 import json
-from typing import Dict, Optional
+from typing import Dict
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from app.services.Common.MongoClientService import MongoClientService
+from app.services.Common.httpClient import HttpClient
+from app.strategy.baseStrategy import BaseStrategy  # ✅ ADD app.
 from app.services.Common.HeaderBuilder import HeaderBuilder
 from app.services.Common.ResponseBuilder import ResponseBuilder
-from app.services.Common.httpClient import HttpClient
 from app.services.geminiService import GeminiService
+from app.globalConstant import constants
+from app.models.schemas import CancelOrderRequest, LoginRequest, LoginResponse, ResponseModel, StockOrderRequest, UserPromptRequest
 from app.services.stockFetchingService import StockFetchingService
-from app.global_constant import constants
-from app.global_constant.BrokerUrl import upstoxUrl
-from app.models.schemas import (
-    CancelOrderRequest,
-    LoginRequest,
-    LoginResponse,
-    ResponseModel,
-    StockOrderRequest,
-    UserPromptRequest
-)
-from app.strategy.baseStrategy import BaseStrategy
+from app.globalConstant.BrokerUrl import upstoxUrl
+import requests
 import json
 
 logger = get_logger(__name__)
@@ -47,12 +41,6 @@ class UpstoxStrategy(BaseStrategy):
         self._httpClient = HttpClient()
 
     def get_login_url(self) -> str:
-        """
-        Generate Upstox login URL
-        
-        Returns:
-            str: OAuth login URL
-        """
         try:
             if not self.api_key:
                 raise ValueError("UPSTOX_API_KEY not configured")

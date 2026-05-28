@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from app.global_constant import constants
+from app.globalConstant import constants
 import pytz
 
 class CommonService:

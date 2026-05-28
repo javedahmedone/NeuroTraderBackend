@@ -5,9 +5,9 @@ pyotp
 python-dotenv
 logzero
 websocket-client
-rapidfuzz
-redis
-ijson
+rapidfuzz==2.15.1
+redis==4.7.0
+ijson==3.2.3
 google-genai
 pymongo[srv]
 upstox-python-sdk

@@ -1,22 +1,47 @@
-from pymongo import MongoClient
 from rapidfuzz import process
-from typing import Optional, List
-from app.global_constant import constants
+from typing import Optional, List, Any, Dict
 from app.models.schemas import SearchStockModel, StockOrderRequest
-import redis
 from app.config import config
 from pymongo import MongoClient
+import os
+import json
+import logging
+
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
+def _decode_redis_value(val: Any) -> Optional[str]:
+    """Handle redis hgetall values that may be bytes or str."""
+    if val is None:
+        return None
+    if isinstance(val, bytes):
+        try:
+            return val.decode("utf-8")
+        except Exception:
+            return str(val)
+    return str(val)
+
 
 class StockFetchingService:
-    def __init__(self):  
-        self.redis = redis.from_url(config.REDIS_URL,decode_responses=config.REDIS_DECODE_RESPONSES,socket_connect_timeout=config.REDIS_SOCKET_CONNECT_TIMEOUT)
+    def __init__(self):
+        # lazy import redis to avoid import-time side-effects/circulars
+        try:
+            import redis  # local import
+        except Exception as e:
+            logger.error("redis import failed: %s", e)
+            raise
+
+        self.redis = redis.from_url(
+            config.REDIS_URL,
+            decode_responses=config.REDIS_DECODE_RESPONSES,
+        )
         self.client = MongoClient(config.MONGO_URL)
+        self.db = self.client[config.MONGO_DB_NAME]
+        self.collection = self.db["companies"]
 
-        # self.client  = MongoClient(uri, tlsCAFile=certifi.where())
-        self.db = self.client[config.MONGO_DB_NAME]            # Database name
-        self.collection = self.db["companies"] 
-
-    # ✅ Fetch a stock by Redis key
+    # Fetch a stock by Redis key
     def getStockByKey(self, stock_key: str, quantity: int) -> Optional[StockOrderRequest]:
         if not stock_key.lower().startswith("stock:"):
             key = f"stock:{stock_key.lower()}"
@@ -28,112 +53,121 @@ class StockFetchingService:
             if not data:
                 return None
 
-            return StockOrderRequest(
-                symbol=data[b'symbol'].decode('utf-8'),
-                name=data[b'name'].decode('utf-8'),
-                token=data[b'token'].decode('utf-8'),
-                instrumenttype=data[b'instrumenttype'].decode('utf-8'),
-                quantity=quantity,
-                isinNumber=data[b'isinNumber'].decode('utf-8'),
-                transactionType=""
-            )
+            # values may be str (if decode_responses=True) or bytes; handle both
+            def g(k: str) -> Optional[str]:
+                # try string key first, then bytes key
+                v = data.get(k)
+                if v is None:
+                    v = data.get(k.encode("utf-8"))
+                return _decode_redis_value(v)
+
+            # Build dict for Pydantic model or return None if essential missing
+            symbol = g("symbol") or g("SYMBOL")
+            name = g("name") or g("NAME")
+            token = g("token")
+            instrumenttype = g("instrumenttype")
+            isin = g("isinNumber") or g("isin")
+
+            # If StockOrderRequest signature differs, caller should adapt; return dict safe
+            try:
+                return StockOrderRequest(
+                    symbol=symbol,
+                    quantity=quantity,
+                    price=float(g("price") or 0.0) if g("price") else 0.0,
+                    order_type=g("order_type") or "LIMIT"
+                )
+            except Exception:
+                # fallback: return as dict if model creation fails
+                return {
+                    "symbol": symbol,
+                    "name": name,
+                    "token": token,
+                    "instrumenttype": instrumenttype,
+                    "quantity": quantity,
+                    "isinNumber": isin,
+                }
+
         except Exception as e:
-            print("❌ Error getting stock:", e)
+            logger.error("Error getting stock by key %s: %s", stock_key, e, exc_info=True)
             return None
 
-    # ✅ Extract stock by prompt (fast fuzzy search)
-    def extract_stock_from_prompt(self, stockData: List[str]) -> Optional[StockOrderRequest]:
-        redis_symbols = {
-            symbol.decode("utf-8").strip().lower()
-            for symbol in self.redis.smembers("stock:symbols")
-        }
-        redis_names = {
-            name.decode("utf-8").strip().lower()
-            for name in self.redis.smembers("stock:names")
-        }
+    # Extract stock by prompt (fast fuzzy search)
+    def extract_stock_from_prompt(self, stockData: List[str]) -> Optional[Dict]:
+        try:
+            redis_symbols = {
+                s.lower().strip()
+                for s in self.redis.smembers("stock:symbols") or set()
+            }
+            redis_names = {
+                n.lower().strip()
+                for n in self.redis.smembers("stock:names") or set()
+            }
+        except Exception as e:
+            logger.error("Error reading symbol/name sets from redis: %s", e)
+            redis_symbols = set()
+            redis_names = set()
 
         for prompt in stockData:
             query = prompt.lower().strip()
-            # --- 1. Exact match on symbol
+            # exact symbol
             if query in redis_symbols:
                 stock_key = f"stock:{query}"
                 result = self.getStockByKey(stock_key, -1)
-                print("✅ Exact symbol match:", result)
+                logger.info("Exact symbol match: %s", result)
                 return result
-            
-            key = query + '-eq'
+
+            key = query + "-eq"
             if key in redis_symbols:
                 stock_key = f"stock:{key}"
                 result = self.getStockByKey(stock_key, -1)
-                print("✅ Exact symbol match:", result)
+                logger.info("Exact symbol match (with -EQ): %s", result)
                 return result
 
-          
-            # --- 3. Fuzzy match
-            match_name = process.extractOne(query, redis_names, score_cutoff=70)
-            match_symbol = process.extractOne(query, redis_symbols, score_cutoff=70)
+            # fuzzy match
+            match_name = process.extractOne(query, list(redis_names), score_cutoff=70)
+            match_symbol = process.extractOne(query, list(redis_symbols), score_cutoff=70)
 
             if match_name and (not match_symbol or match_name[1] >= match_symbol[1]):
                 matched_name = match_name[0]
-                name = "stock:"+matched_name
-                symbol = self.redis.get(name)
+                symbol = self.redis.get(f"stock:{matched_name}")
                 if symbol:
-                    stock_key = f"stock:{symbol.decode('utf-8')}"
+                    # if decode_responses True, symbol is str
+                    symbol_val = symbol if isinstance(symbol, str) else _decode_redis_value(symbol)
+                    stock_key = f"stock:{symbol_val}"
                     result = self.getStockByKey(stock_key, -1)
-                    print("✅ Fuzzy name match:", result)
+                    logger.info("Fuzzy name match: %s", result)
                     return result
 
             elif match_symbol:
                 matched_symbol = match_symbol[0].lower()
                 stock_key = f"stock:{matched_symbol}"
                 result = self.getStockByKey(stock_key, -1)
-                print("✅ Fuzzy symbol match:", result)
+                logger.info("Fuzzy symbol match: %s", result)
                 return result
 
-        print("⚠️ No stock match found for any prompt.")
+        logger.warning("No stock match found for prompts.")
         return None
 
     def stockBySearchQuery(self, query: str) -> List[SearchStockModel]:
         pipeline = [
             {
                 "$search": {
-                    "index": "default",   # 🔹 replace with your index name
+                    "index": "default",
                     "compound": {
                         "should": [
-                            {
-                                "text": {
-                                    "query": query,
-                                    "path": "company_name",
-                                    "fuzzy": { "maxEdits": 1 }  # allow typos
-                                }
-                            },
-                            {
-                                "text": {
-                                    "query": query,
-                                    "path": "symbol",
-                                    "fuzzy": { "maxEdits": 1 }
-                                }
-                            }
+                            {"text": {"query": query, "path": "company_name", "fuzzy": {"maxEdits": 1}}},
+                            {"text": {"query": query, "path": "symbol", "fuzzy": {"maxEdits": 1}}}
                         ]
                     }
                 }
             },
-            {"$limit": 10},   # only return top 10 results
-            {
-                "$project": {
-                    "_id": 0,
-                    "symbol": 1,
-                    "company_name": 1,
-                    "isinNumber": 1,   # ✅ include isin
-                    "token": 1   
-                }
-            }
+            {"$limit": 10},
+            {"$project": {"_id": 0, "symbol": 1, "company_name": 1, "isinNumber": 1, "token": 1}}
         ]
 
         results = list(self.collection.aggregate(pipeline))
-        stocksData: list[SearchStockModel] = []
+        stocksData: List[SearchStockModel] = []
 
-    # ✅ Simple for loop to build the list
         for item in results:
             model = SearchStockModel(
                 stockName=item.get("company_name"),

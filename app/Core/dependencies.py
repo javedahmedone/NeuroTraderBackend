@@ -1,4 +1,4 @@
-from fastapi.params import Depends
+from fastapi import Depends
 from app.services.geminiService import GeminiService
 from app.services.intentDetectionService import IntentDetectionService
 from app.services.promptAnalyzerService import PromptAnalyzerService
@@ -20,6 +20,10 @@ def get_analyzer_service(
 
 ):
     return PromptAnalyzerService(intent_service, stock_fetching_service, gemini_service)
+
+def get_analyzer_service() -> PromptAnalyzerService:
+    """Dependency injection for PromptAnalyzerService"""
+    return PromptAnalyzerService()
 
 
 
